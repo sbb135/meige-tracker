@@ -66,21 +66,31 @@ const MeigeTracker = () => {
   const [entries, setEntries] = useState({});
   const [botoxRecords, setBotoxRecords] = useState([]);
 
-  // Locais de injecção de Botox para Meige
+  // Locais de injecção de Botox para Síndrome de Meige - groupados por condição clínica
   const botoxSites = [
-    { id: 'orbicular_sup_esq', name: 'Pálpebra superior esquerda', group: 'Olhos' },
-    { id: 'orbicular_sup_dir', name: 'Pálpebra superior direita', group: 'Olhos' },
-    { id: 'orbicular_inf_esq', name: 'Pálpebra inferior esquerda', group: 'Olhos' },
-    { id: 'orbicular_inf_dir', name: 'Pálpebra inferior direita', group: 'Olhos' },
-    { id: 'sobrancelha_esq', name: 'Sobrancelha esquerda', group: 'Olhos' },
-    { id: 'sobrancelha_dir', name: 'Sobrancelha direita', group: 'Olhos' },
-    { id: 'masseter_esq', name: 'Masseter esquerdo', group: 'Face' },
-    { id: 'masseter_dir', name: 'Masseter direito', group: 'Face' },
-    { id: 'temporal_esq', name: 'Temporal esquerdo', group: 'Face' },
-    { id: 'temporal_dir', name: 'Temporal direito', group: 'Face' },
-    { id: 'pterigoideu', name: 'Pterigoideu', group: 'Face' },
-    { id: 'orbicular_boca', name: 'Orbicular da boca', group: 'Face' },
-    { id: 'mento', name: 'Mento (queixo)', group: 'Face' },
+    // Blefarospasmo - músculos periorbitais
+    { id: 'orbicular_sup_esq', name: 'Pálpebra superior esquerda', group: 'Blefarospasmo' },
+    { id: 'orbicular_sup_dir', name: 'Pálpebra superior direita', group: 'Blefarospasmo' },
+    { id: 'orbicular_inf_esq', name: 'Pálpebra inferior esquerda', group: 'Blefarospasmo' },
+    { id: 'orbicular_inf_dir', name: 'Pálpebra inferior direita', group: 'Blefarospasmo' },
+    { id: 'sobrancelha_esq', name: 'Sobrancelha esquerda (corrugador)', group: 'Blefarospasmo' },
+    { id: 'sobrancelha_dir', name: 'Sobrancelha direita (corrugador)', group: 'Blefarospasmo' },
+    { id: 'procerus', name: 'Prócerus', group: 'Blefarospasmo' },
+    // Distonia Oromandibular - músculos da mandíbula
+    { id: 'masseter_esq', name: 'Masseter esquerdo', group: 'Distonia Oromandibular' },
+    { id: 'masseter_dir', name: 'Masseter direito', group: 'Distonia Oromandibular' },
+    { id: 'temporal_esq', name: 'Temporal esquerdo', group: 'Distonia Oromandibular' },
+    { id: 'temporal_dir', name: 'Temporal direito', group: 'Distonia Oromandibular' },
+    { id: 'pterigoideu_esq', name: 'Pterigoideu lateral esquerdo', group: 'Distonia Oromandibular' },
+    { id: 'pterigoideu_dir', name: 'Pterigoideu lateral direito', group: 'Distonia Oromandibular' },
+    { id: 'orbicular_boca', name: 'Orbicular da boca', group: 'Distonia Oromandibular' },
+    { id: 'mento', name: 'Mento (queixo)', group: 'Distonia Oromandibular' },
+    { id: 'digastrico', name: 'Digástrico', group: 'Distonia Oromandibular' },
+    // Distonia Cervical - músculos do pescoço (se aplicável)
+    { id: 'esternocleidomastoideo_esq', name: 'Esternocleidomastóideo esquerdo', group: 'Pescoço' },
+    { id: 'esternocleidomastoideo_dir', name: 'Esternocleidomastóideo direito', group: 'Pescoço' },
+    { id: 'trapezio_esq', name: 'Trapézio esquerdo', group: 'Pescoço' },
+    { id: 'trapezio_dir', name: 'Trapézio direito', group: 'Pescoço' },
   ];
 
   // Nova entrada de Botox
@@ -649,7 +659,7 @@ const MeigeTracker = () => {
           />
 
           <SymptomSlider
-            label="Face e mandíbula"
+            label="Mandíbula"
             value={dayEntry.wakeFace}
             onChange={(v) => setDayEntry({ ...dayEntry, wakeFace: v })}
             description="0 = Sem tensão | 10 = Movimentos involuntários fortes"
@@ -701,7 +711,7 @@ const MeigeTracker = () => {
           />
 
           <SymptomSlider
-            label="Face e mandíbula"
+            label="Mandíbula"
             value={dayEntry.morningFace}
             onChange={(v) => setDayEntry({ ...dayEntry, morningFace: v })}
           />
@@ -744,7 +754,7 @@ const MeigeTracker = () => {
           />
 
           <SymptomSlider
-            label="Face e mandíbula"
+            label="Mandíbula"
             value={dayEntry.afternoonFace}
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonFace: v })}
           />
@@ -787,7 +797,7 @@ const MeigeTracker = () => {
           />
 
           <SymptomSlider
-            label="Face e mandíbula"
+            label="Mandíbula"
             value={dayEntry.eveningFace}
             onChange={(v) => setDayEntry({ ...dayEntry, eveningFace: v })}
           />
@@ -879,63 +889,114 @@ const MeigeTracker = () => {
                 )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {Object.entries(med.times).map(([time, config]) => (
-                  <div key={time} className="bg-slate-600 rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-slate-300 capitalize">{time}</span>
-                      <button
-                        onClick={() => {
-                          const newMeds = { ...dayEntry.medicationsTaken };
-                          if (!newMeds[med.id]) newMeds[med.id] = {};
-                          if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true };
-                          newMeds[med.id][time].taken = !newMeds[med.id][time].taken;
-                          setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                        }}
-                        className={`px-3 py-1 rounded text-sm ${dayEntry.medicationsTaken?.[med.id]?.[time]?.taken !== false
-                          ? 'bg-sky-600 text-white'
-                          : 'bg-slate-500 text-slate-300'
-                          }`}
-                      >
-                        {dayEntry.medicationsTaken?.[med.id]?.[time]?.taken !== false ? 'Tomou' : 'Não tomou'}
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <label className="block text-xs text-slate-400 mb-1">Hora</label>
-                        <input
-                          type="time"
-                          value={dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour}
-                          onChange={(e) => {
+                {Object.entries(med.times).map(([time, config]) => {
+                  const periodLabels = {
+                    pequeno_almoco: 'Manhã',
+                    manha: 'Manhã',
+                    almoco: 'Almoço',
+                    lanche: 'Tarde',
+                    tarde: 'Tarde',
+                    jantar: 'Noite',
+                    deitar: 'Noite',
+                    noite: 'Noite'
+                  };
+                  const periodLabel = periodLabels[time] || time;
+                  const currentHour = dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour;
+                  const currentTiming = dayEntry.medicationsTaken?.[med.id]?.[time]?.timing ?? config.timing ?? 'depois';
+
+                  return (
+                    <div key={time} className="bg-slate-600 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-slate-200">{periodLabel}</span>
+                        <button
+                          onClick={() => {
                             const newMeds = { ...dayEntry.medicationsTaken };
                             if (!newMeds[med.id]) newMeds[med.id] = {};
-                            if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true };
-                            newMeds[med.id][time].hour = e.target.value;
+                            if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: currentTiming };
+                            newMeds[med.id][time].taken = !newMeds[med.id][time].taken;
                             setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                           }}
-                          className="w-full p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
-                        />
+                          className={`px-3 py-1 rounded text-sm ${dayEntry.medicationsTaken?.[med.id]?.[time]?.taken !== false
+                            ? 'bg-sky-600 text-white'
+                            : 'bg-slate-500 text-slate-300'
+                            }`}
+                        >
+                          {dayEntry.medicationsTaken?.[med.id]?.[time]?.taken !== false ? 'Tomou' : 'Não tomou'}
+                        </button>
                       </div>
-                      <div className="w-20">
-                        <label className="block text-xs text-slate-400 mb-1">Qtd.</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="20"
-                          step="0.5"
-                          value={dayEntry.medicationsTaken?.[med.id]?.[time]?.qty ?? config.qty}
-                          onChange={(e) => {
-                            const newMeds = { ...dayEntry.medicationsTaken };
-                            if (!newMeds[med.id]) newMeds[med.id] = {};
-                            if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true };
-                            newMeds[med.id][time].qty = parseFloat(e.target.value) || 0;
-                            setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                          }}
-                          className="w-full p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm text-center"
-                        />
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex-1">
+                          <label className="block text-xs text-slate-400 mb-1">Hora</label>
+                          <input
+                            type="time"
+                            value={dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour}
+                            onChange={(e) => {
+                              const newMeds = { ...dayEntry.medicationsTaken };
+                              if (!newMeds[med.id]) newMeds[med.id] = {};
+                              if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: currentTiming };
+                              newMeds[med.id][time].hour = e.target.value;
+                              setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                            }}
+                            className="w-full p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
+                          />
+                        </div>
+                        <div className="w-20">
+                          <label className="block text-xs text-slate-400 mb-1">Qtd.</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="20"
+                            step="0.5"
+                            value={dayEntry.medicationsTaken?.[med.id]?.[time]?.qty ?? config.qty}
+                            onChange={(e) => {
+                              const newMeds = { ...dayEntry.medicationsTaken };
+                              if (!newMeds[med.id]) newMeds[med.id] = {};
+                              if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: currentTiming };
+                              newMeds[med.id][time].qty = parseFloat(e.target.value) || 0;
+                              setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                            }}
+                            className="w-full p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm text-center"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Refeição</label>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              const newMeds = { ...dayEntry.medicationsTaken };
+                              if (!newMeds[med.id]) newMeds[med.id] = {};
+                              if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: 'antes' };
+                              else newMeds[med.id][time].timing = 'antes';
+                              setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                            }}
+                            className={`flex-1 px-2 py-1 rounded text-xs ${currentTiming === 'antes'
+                              ? 'bg-sky-600 text-white'
+                              : 'bg-slate-700 text-slate-300 hover:bg-slate-500'
+                              }`}
+                          >
+                            Antes
+                          </button>
+                          <button
+                            onClick={() => {
+                              const newMeds = { ...dayEntry.medicationsTaken };
+                              if (!newMeds[med.id]) newMeds[med.id] = {};
+                              if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: 'depois' };
+                              else newMeds[med.id][time].timing = 'depois';
+                              setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                            }}
+                            className={`flex-1 px-2 py-1 rounded text-xs ${currentTiming === 'depois'
+                              ? 'bg-sky-600 text-white'
+                              : 'bg-slate-700 text-slate-300 hover:bg-slate-500'
+                              }`}
+                          >
+                            Depois
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -1168,7 +1229,7 @@ const MeigeTracker = () => {
 
   // Configuração de medicamentos
   const renderMedicationSetup = () => {
-    const timeLabels = ['manhã', 'almoço', 'tarde', 'noite'];
+    const timeLabels = ['manhã', 'tarde', 'noite'];
 
     return (
       <div className="max-w-xl mx-auto">
@@ -1466,7 +1527,7 @@ const MeigeTracker = () => {
           <div className="mb-4">
             <label className="block text-sm text-slate-400 mb-2">Locais de injecção</label>
 
-            {['Olhos', 'Face'].map(group => (
+            {['Blefarospasmo', 'Distonia Oromandibular', 'Pescoço'].map(group => (
               <div key={group} className="mb-4">
                 <p className="text-xs text-slate-500 uppercase mb-2">{group}</p>
                 <div className="space-y-2">
@@ -1596,101 +1657,229 @@ const MeigeTracker = () => {
     </div>
   );
 
+  // State for report timeline filter
+  const [reportTimeline, setReportTimeline] = useState('all');
+
   // Relatório com gráficos
   const renderReport = () => {
-    const chartData = prepareChartData();
-    const triggersData = getTriggersData();
-    const entryDates = Object.keys(entries).sort().reverse();
+    const entryDates = Object.keys(entries).sort();
+
+    // Filter entries based on timeline selection
+    const filterByTimeline = (dates) => {
+      if (reportTimeline === 'all') return dates;
+      const now = new Date();
+      const cutoff = new Date();
+      if (reportTimeline === '7') cutoff.setDate(now.getDate() - 7);
+      else if (reportTimeline === '30') cutoff.setDate(now.getDate() - 30);
+      else if (reportTimeline === '90') cutoff.setDate(now.getDate() - 90);
+      return dates.filter(d => new Date(d) >= cutoff);
+    };
+
+    const filteredDates = filterByTimeline(entryDates);
+
+    // Prepare raw time-series data for correlation charts
+    const timeSeriesData = filteredDates.map(date => {
+      const entry = entries[date];
+      const [y, m, d] = date.split('-');
+
+      // Calculate days since last Botox
+      let daysSinceBtx = null;
+      if (botoxRecords.length > 0) {
+        const sortedBotox = [...botoxRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const entryDate = new Date(date);
+        for (const btx of sortedBotox) {
+          if (new Date(btx.date) <= entryDate) {
+            daysSinceBtx = Math.floor((entryDate - new Date(btx.date)) / (1000 * 60 * 60 * 24));
+          }
+        }
+      }
+
+      // Map speech values to numbers for charting
+      const speechMap = { 'normal': 0, 'alguma_dificuldade': 3, 'muita_dificuldade': 7, 'nao_conseguiu': 10 };
+      const eatingMap = { 'normal': 0, 'alguma_dificuldade': 3, 'muita_dificuldade': 7, 'nao_conseguiu': 10 };
+
+      return {
+        date: `${d}/${m}`,
+        fullDate: date,
+        olhos: entry.morningEyes || 0,
+        face: entry.morningFace || 0,
+        olhosTarde: entry.afternoonEyes || 0,
+        faceTarde: entry.afternoonFace || 0,
+        olhosNoite: entry.eveningEyes || 0,
+        faceNoite: entry.eveningFace || 0,
+        fala: speechMap[entry.morningSpeech] ?? null,
+        comer: eatingMap[entry.morningEating] ?? null,
+        falaTarde: speechMap[entry.afternoonSpeech] ?? null,
+        comerTarde: eatingMap[entry.afternoonEating] ?? null,
+        choro: entry.cryingEpisodes || 0,
+        daysSinceBtx,
+        sono: entry.bedTime && entry.wakeTime ? (() => {
+          const [bedH, bedM] = entry.bedTime.split(':').map(Number);
+          const [wakeH, wakeM] = entry.wakeTime.split(':').map(Number);
+          let hours = wakeH - bedH;
+          if (hours < 0) hours += 24;
+          return hours;
+        })() : null
+      };
+    });
 
     return (
       <div className="max-w-2xl mx-auto">
-        <h2 className="text-xl font-semibold text-slate-100 mb-6">Relatório para o médico</h2>
+        <h2 className="text-xl font-semibold text-slate-100 mb-4">Relatório para o médico</h2>
 
-        {entryDates.length === 0 ? (
+        {/* Timeline Filter */}
+        <div className="bg-slate-800 rounded-xl p-4 mb-4">
+          <label className="block text-sm text-slate-400 mb-2">Período de análise</label>
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { value: 'all', label: 'Todos os dias' },
+              { value: '7', label: 'Últimos 7 dias' },
+              { value: '30', label: 'Últimos 30 dias' },
+              { value: '90', label: 'Últimos 90 dias' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setReportTimeline(opt.value)}
+                className={`px-3 py-2 rounded-lg text-sm ${reportTimeline === opt.value
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500 mt-2">{filteredDates.length} dias no período selecionado</p>
+        </div>
+
+        {filteredDates.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
-            <p className="text-lg mb-2">Ainda não há registos</p>
-            <p>Comece a registar os dias para ver padrões</p>
+            <p className="text-lg mb-2">Sem dados no período selecionado</p>
+            <p>Selecione outro período ou registe mais dias</p>
           </div>
         ) : (
           <>
+            {/* Correlation Chart: Blefarospasmo vs Distonia Oromandibular */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-4">{entryDates.length} dias registados</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-slate-700 rounded-lg p-4">
-                  <p className="text-sm text-slate-400">Média olhos</p>
-                  <p className="text-2xl font-bold text-slate-100">{(entryDates.reduce((sum, d) => sum + (entries[d].morningEyes || 0), 0) / entryDates.length).toFixed(1)}</p>
-                </div>
-                <div className="bg-slate-700 rounded-lg p-4">
-                  <p className="text-sm text-slate-400">Média face</p>
-                  <p className="text-2xl font-bold text-slate-100">{(entryDates.reduce((sum, d) => sum + (entries[d].morningFace || 0), 0) / entryDates.length).toFixed(1)}</p>
-                </div>
-                <div className="bg-slate-700 rounded-lg p-4">
-                  <p className="text-sm text-slate-400">Dias bons</p>
-                  <p className="text-2xl font-bold text-slate-100">{entryDates.filter(d => ((entries[d].morningEyes || 0) + (entries[d].morningFace || 0)) / 2 <= 2).length}</p>
-                </div>
-                <div className="bg-slate-700 rounded-lg p-4">
-                  <p className="text-sm text-slate-400">Episódios choro</p>
-                  <p className="text-2xl font-bold text-slate-100">{entryDates.reduce((sum, d) => sum + (entries[d].cryingEpisodes || 0), 0)}</p>
-                </div>
+              <h3 className="font-semibold text-slate-100 mb-2">Correlação Temporal: Blefarospasmo vs Distonia Oromandibular</h3>
+              <p className="text-sm text-slate-400 mb-4">Análise de covariância entre sintomas oculares e mandibulares. Curvas paralelas indicam correlação positiva.</p>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={timeSeriesData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade (0-10)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
+                      labelFormatter={(label) => `Data: ${label}`}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="choro" name="Episódios de Choro" stroke="#ec4899" strokeWidth={1} dot={{ r: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
-            {chartData.length > 1 && (
+            {/* Functional Impact: Oromandibular Dystonia */}
+            <div className="bg-slate-800 rounded-xl p-5 mb-4">
+              <h3 className="font-semibold text-slate-100 mb-2">Impacto Funcional da Distonia Oromandibular</h3>
+              <p className="text-sm text-slate-400 mb-4">Correlação entre severidade da distonia e funções oromotoras (fala, mastigação/deglutição)</p>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={timeSeriesData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
+                      formatter={(value, name) => {
+                        if (name.includes('Disartria') || name.includes('Disfagia')) {
+                          const labels = { 0: 'Normal', 3: 'Dificuldade leve', 7: 'Dificuldade moderada', 10: 'Incapacidade' };
+                          return [labels[value] || value, name];
+                        }
+                        return [value, name];
+                      }}
+                    />
+                    <Legend />
+                    <Line type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                    <Line type="monotone" dataKey="fala" name="Disartria (fala)" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                    <Line type="monotone" dataKey="comer" name="Disfagia (comer)" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Circadian Pattern */}
+            <div className="bg-slate-800 rounded-xl p-5 mb-4">
+              <h3 className="font-semibold text-slate-100 mb-2">Padrão Circadiano da Distonia</h3>
+              <p className="text-sm text-slate-400 mb-4">Variação da severidade ao longo do dia. Padrão crescente sugere fadiga neuromuscular.</p>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={timeSeriesData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                    <Legend />
+                    <Line type="monotone" dataKey="face" name="Manhã (pós-acordar)" stroke="#fbbf24" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="faceTarde" name="Tarde (12h-18h)" stroke="#f97316" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="faceNoite" name="Noite (após 18h)" stroke="#dc2626" strokeWidth={2} dot={{ r: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Botulinum Toxin Efficacy Decay Curve */}
+            {botoxRecords.length > 0 && timeSeriesData.some(d => d.daysSinceBtx !== null) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-4">Evolução dos sintomas</h3>
-                <div className="h-64">
+                <h3 className="font-semibold text-slate-100 mb-2">Curva de Eficácia da Toxina Botulínica</h3>
+                <p className="text-sm text-slate-400 mb-4">Severidade dos sintomas em função do tempo pós-injecção. Identifica o período de eficácia terapêutica.</p>
+                <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData}>
+                    <LineChart data={timeSeriesData.filter(d => d.daysSinceBtx !== null)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                      <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <XAxis dataKey="daysSinceBtx" stroke="#94a3b8" tick={{ fontSize: 10 }} label={{ value: 'Dias pós-injecção', position: 'bottom', fill: '#94a3b8', fontSize: 11 }} />
+                      <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
+                        labelFormatter={(label) => `Dia ${label} pós-injecção`}
+                      />
                       <Legend />
-                      <Line type="monotone" dataKey="mediaOlhos" name="Olhos" stroke="#0ea5e9" strokeWidth={2} />
-                      <Line type="monotone" dataKey="mediaFace" name="Face" stroke="#38bdf8" strokeWidth={2} />
+                      <Line type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
             )}
 
-            {chartData.length > 1 && chartData.some(d => d.choro > 0) && (
+            {/* Sleep-Dystonia Correlation */}
+            {timeSeriesData.some(d => d.sono !== null) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-4">Episódios de choro</h3>
-                <div className="h-48">
+                <h3 className="font-semibold text-slate-100 mb-2">Correlação Sono-Distonia</h3>
+                <p className="text-sm text-slate-400 mb-4">Relação entre duração do sono e severidade dos sintomas. Privação de sono pode exacerbar distonia.</p>
+                <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
+                    <LineChart data={timeSeriesData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                      <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="symptoms" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                      <YAxis yAxisId="sleep" orientation="right" domain={[0, 12]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Horas', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                      <Bar dataKey="choro" name="Episódios" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-                    </BarChart>
+                      <Legend />
+                      <Line yAxisId="symptoms" type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="symptoms" type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Duração do Sono (h)" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
             )}
-
-            {triggersData.length > 0 && (
-              <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-4">Triggers mais frequentes</h3>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={triggersData} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis type="number" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                      <YAxis type="category" dataKey="name" stroke="#94a3b8" tick={{ fontSize: 12 }} width={100} />
-                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                      <Bar dataKey="value" name="Vezes" fill="#0ea5e9" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
             <div className="bg-slate-800 rounded-xl p-5">
-              <h3 className="font-semibold text-slate-100 mb-4">Últimos registos</h3>
-              {entryDates.slice(0, 7).map(date => {
+              <h3 className="font-semibold text-slate-100 mb-4">Últimos registos ({filteredDates.length} dias)</h3>
+              {filteredDates.slice(-7).reverse().map(date => {
                 const entry = entries[date];
                 return (
                   <div key={date} className="border-b border-slate-700 py-4 last:border-0">
@@ -1699,9 +1888,9 @@ const MeigeTracker = () => {
                       <span className="text-sm text-slate-400">Sono: {entry.bedTime || '-'} - {entry.wakeTime || '-'}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div className="text-slate-400">Acordar: <span className="text-slate-200">O:{entry.wakeEyes} F:{entry.wakeFace}</span></div>
-                      <div className="text-slate-400">Manhã: <span className="text-slate-200">O:{entry.morningEyes} F:{entry.morningFace}</span></div>
-                      <div className="text-slate-400">Tarde: <span className="text-slate-200">O:{entry.afternoonEyes} F:{entry.afternoonFace}</span></div>
+                      <div className="text-slate-400">Acordar: <span className="text-slate-200">O:{entry.wakeEyes} M:{entry.wakeFace}</span></div>
+                      <div className="text-slate-400">Manhã: <span className="text-slate-200">O:{entry.morningEyes} M:{entry.morningFace}</span></div>
+                      <div className="text-slate-400">Tarde: <span className="text-slate-200">O:{entry.afternoonEyes} M:{entry.afternoonFace}</span></div>
                     </div>
                     {entry.notes && <p className="mt-2 text-sm text-slate-500 italic">"{entry.notes}"</p>}
                   </div>
