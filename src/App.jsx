@@ -190,10 +190,35 @@ const MeigeTracker = () => {
       setIsLoading(true);
       try {
         // Load entries
-        const { data: entriesData } = await supabase.from('entries').select('*');
+        const { data: entriesData } = await supabase.from('daily_entries').select('*');
         if (entriesData) {
           const entriesObj = {};
-          entriesData.forEach(e => { entriesObj[e.date] = e.data; });
+          entriesData.forEach(e => {
+            entriesObj[e.entry_date] = {
+              bedTime: e.bed_time,
+              wakeTime: e.wake_time,
+              sleepQuality: e.sleep_quality,
+              wakeEyes: e.wake_eyes,
+              wakeFace: e.wake_face,
+              morningEyes: e.morning_eyes,
+              morningFace: e.morning_face,
+              morningSpeech: e.morning_speech,
+              morningEating: e.morning_eating,
+              afternoonEyes: e.afternoon_eyes,
+              afternoonFace: e.afternoon_face,
+              afternoonSpeech: e.afternoon_speech,
+              afternoonEating: e.afternoon_eating,
+              eveningEyes: e.evening_eyes,
+              eveningFace: e.evening_face,
+              eveningSpeech: e.evening_speech,
+              eveningEating: e.evening_eating,
+              triggers: e.triggers || {},
+              normalTasks: e.normal_tasks,
+              cryingEpisodes: e.crying_episodes,
+              medicationsTaken: e.medications_taken || {},
+              notes: e.notes
+            };
+          });
           setEntries(entriesObj);
         }
 
@@ -204,9 +229,17 @@ const MeigeTracker = () => {
         }
 
         // Load botox records
-        const { data: botoxData } = await supabase.from('botox_records').select('*');
+        const { data: botoxData } = await supabase.from('botox_injections').select('*');
         if (botoxData) {
-          setBotoxRecords(botoxData.map(b => ({ ...b.data, id: b.id })));
+          setBotoxRecords(botoxData.map(b => ({
+            id: b.id,
+            date: b.injection_date,
+            totalDose: b.total_dose,
+            sites: b.sites || {},
+            doctor: b.doctor,
+            clinic: b.clinic,
+            notes: b.notes
+          })));
         }
 
         // Load consultas
@@ -250,11 +283,32 @@ const MeigeTracker = () => {
     setIsSaving(true);
     try {
       // Upsert to Supabase (insert or update)
-      await supabase.from('entries').upsert({
-        date: selectedDate,
-        data: dayEntry,
+      await supabase.from('daily_entries').upsert({
+        entry_date: selectedDate,
+        bed_time: dayEntry.bedTime,
+        wake_time: dayEntry.wakeTime,
+        sleep_quality: dayEntry.sleepQuality,
+        wake_eyes: dayEntry.wakeEyes,
+        wake_face: dayEntry.wakeFace,
+        morning_eyes: dayEntry.morningEyes,
+        morning_face: dayEntry.morningFace,
+        morning_speech: dayEntry.morningSpeech,
+        morning_eating: dayEntry.morningEating,
+        afternoon_eyes: dayEntry.afternoonEyes,
+        afternoon_face: dayEntry.afternoonFace,
+        afternoon_speech: dayEntry.afternoonSpeech,
+        afternoon_eating: dayEntry.afternoonEating,
+        evening_eyes: dayEntry.eveningEyes,
+        evening_face: dayEntry.eveningFace,
+        evening_speech: dayEntry.eveningSpeech,
+        evening_eating: dayEntry.eveningEating,
+        triggers: dayEntry.triggers,
+        normal_tasks: dayEntry.normalTasks,
+        crying_episodes: dayEntry.cryingEpisodes,
+        medications_taken: dayEntry.medicationsTaken,
+        notes: dayEntry.notes,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'date' });
+      }, { onConflict: 'entry_date' });
 
       setEntries(prev => ({
         ...prev,
@@ -291,9 +345,13 @@ const MeigeTracker = () => {
   // Guardar Botox
   const saveBotoxRecord = async () => {
     try {
-      const { data } = await supabase.from('botox_records').insert({
-        date: newBotox.date,
-        data: newBotox
+      const { data } = await supabase.from('botox_injections').insert({
+        injection_date: newBotox.date,
+        total_dose: newBotox.totalDose,
+        sites: newBotox.sites,
+        doctor: newBotox.doctor,
+        clinic: newBotox.clinic,
+        notes: newBotox.notes
       }).select();
       if (data && data[0]) {
         setBotoxRecords(prev => [...prev, { ...newBotox, id: data[0].id }]);
@@ -1630,7 +1688,10 @@ const MeigeTracker = () => {
                     <p className="text-slate-400 text-sm">Dose total: {record.totalDose}</p>
                   </div>
                   <button
-                    onClick={() => setBotoxRecords(botoxRecords.filter(b => b.id !== record.id))}
+                    onClick={async () => {
+                      await supabase.from('botox_injections').delete().eq('id', record.id);
+                      setBotoxRecords(botoxRecords.filter(b => b.id !== record.id));
+                    }}
                     className="text-red-400 hover:text-red-300 text-sm"
                   >
                     Remover
