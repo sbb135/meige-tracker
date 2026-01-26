@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { supabase } from './supabase';
 
 const MeigeTracker = () => {
   const [currentView, setCurrentView] = useState('calendar');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showMedicationSetup, setShowMedicationSetup] = useState(false);
   const [showBotoxForm, setShowBotoxForm] = useState(false);
   const [showConsultaForm, setShowConsultaForm] = useState(false);
-  
+
   // Horários de refeição
   const mealTimes = [
     { id: 'pequeno_almoco', label: 'Pequeno-almoço', defaultHour: '08:00' },
@@ -32,29 +35,37 @@ const MeigeTracker = () => {
     notas: '',
     proximaConsulta: ''
   });
-  
+
   // Medicamentos
   const [medications, setMedications] = useState([
-    { id: 1, name: 'Rivotril', dosePerPill: '0,5', unit: 'mg', times: { 
-      pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' }, 
-      lanche: { qty: 1.5, hour: '16:00', timing: 'depois' }, 
-      deitar: { qty: 3, hour: '22:30', timing: 'antes' } 
-    }},
-    { id: 2, name: 'Artane', dosePerPill: '2', unit: 'mg', times: { 
-      pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' }, 
-      lanche: { qty: 1, hour: '16:00', timing: 'depois' } 
-    }},
-    { id: 3, name: 'Metibasol', dosePerPill: '5', unit: 'mg', times: { 
-      almoco: { qty: 1, hour: '13:00', timing: 'depois' } 
-    }},
-    { id: 4, name: 'Gotas antidepressivas', dosePerPill: '', unit: 'gotas', times: { 
-      deitar: { qty: 10, hour: '22:00', timing: 'antes' } 
-    }},
+    {
+      id: 1, name: 'Rivotril', dosePerPill: '0,5', unit: 'mg', times: {
+        pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' },
+        lanche: { qty: 1.5, hour: '16:00', timing: 'depois' },
+        deitar: { qty: 3, hour: '22:30', timing: 'antes' }
+      }
+    },
+    {
+      id: 2, name: 'Artane', dosePerPill: '2', unit: 'mg', times: {
+        pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' },
+        lanche: { qty: 1, hour: '16:00', timing: 'depois' }
+      }
+    },
+    {
+      id: 3, name: 'Metibasol', dosePerPill: '5', unit: 'mg', times: {
+        almoco: { qty: 1, hour: '13:00', timing: 'depois' }
+      }
+    },
+    {
+      id: 4, name: 'Gotas antidepressivas', dosePerPill: '', unit: 'gotas', times: {
+        deitar: { qty: 10, hour: '22:00', timing: 'antes' }
+      }
+    },
   ]);
-  
+
   const [entries, setEntries] = useState({});
   const [botoxRecords, setBotoxRecords] = useState([]);
-  
+
   // Locais de injecção de Botox para Meige
   const botoxSites = [
     { id: 'orbicular_sup_esq', name: 'Pálpebra superior esquerda', group: 'Olhos' },
@@ -90,37 +101,37 @@ const MeigeTracker = () => {
     sleepInterruptions: 0,
     sleepQuality: '',
     feltRested: '',
-    
+
     // Ao acordar
     wakeEyes: 0,
     wakeFace: 0,
     wakeEmotion: '',
     wakeStabilizeTime: '',
     wakeCrying: false,
-    
+
     // Manhã
     morningEyes: 0,
     morningFace: 0,
     morningSpeech: '',
     morningEating: '',
-    
+
     // Tarde
     afternoonEyes: 0,
     afternoonFace: 0,
     afternoonSpeech: '',
     afternoonEating: '',
-    
+
     // Noite
     eveningEyes: 0,
     eveningFace: 0,
     eveningSpeech: '',
     eveningEating: '',
-    
+
     // Período bom
     hadGoodPeriod: false,
     goodPeriodDuration: '',
     goodPeriodWhen: '',
-    
+
     // Triggers
     triggers: {
       stress: false,
@@ -130,22 +141,22 @@ const MeigeTracker = () => {
       socialSituation: false,
       other: ''
     },
-    
+
     // Humor
     sadnessNoReason: false,
     cryingEpisodes: 0,
     irritability: false,
     anxiety: '',
-    
+
     // Funcionalidade
     leftHouse: '',
     normalTasks: '',
     neededHelp: false,
-    
+
     // Medicação
     medicationsTaken: {},
     medicationNotes: '',
-    
+
     // Efeitos secundários
     sideEffects: {
       dryMouth: false,
@@ -153,17 +164,55 @@ const MeigeTracker = () => {
       dizziness: false,
       other: ''
     },
-    
+
     // Botox
     botoxEffect: '',
-    
+
     // Notas
     notes: ''
   });
 
   const [dayEntry, setDayEntry] = useState(getDefaultDayEntry());
 
-  // Carregar dados do dia
+  // Load all data from Supabase on startup
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Load entries
+        const { data: entriesData } = await supabase.from('entries').select('*');
+        if (entriesData) {
+          const entriesObj = {};
+          entriesData.forEach(e => { entriesObj[e.date] = e.data; });
+          setEntries(entriesObj);
+        }
+
+        // Load medications
+        const { data: medsData } = await supabase.from('medications').select('*').order('id', { ascending: false }).limit(1);
+        if (medsData && medsData.length > 0) {
+          setMedications(medsData[0].data);
+        }
+
+        // Load botox records
+        const { data: botoxData } = await supabase.from('botox_records').select('*');
+        if (botoxData) {
+          setBotoxRecords(botoxData.map(b => ({ ...b.data, id: b.id })));
+        }
+
+        // Load consultas
+        const { data: consultasData } = await supabase.from('consultas').select('*');
+        if (consultasData) {
+          setConsultas(consultasData.map(c => ({ ...c.data, id: c.id })));
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+      setIsLoading(false);
+    };
+    loadData();
+  }, []);
+
+  // Update dayEntry when selectedDate or entries change
   useEffect(() => {
     if (entries[selectedDate]) {
       setDayEntry(entries[selectedDate]);
@@ -172,10 +221,10 @@ const MeigeTracker = () => {
       medications.forEach(med => {
         defaultMeds[med.id] = {};
         Object.entries(med.times).forEach(([time, config]) => {
-          defaultMeds[med.id][time] = { 
-            qty: config.qty, 
+          defaultMeds[med.id][time] = {
+            qty: config.qty,
             hour: config.hour,
-            taken: true 
+            taken: true
           };
         });
       });
@@ -184,14 +233,27 @@ const MeigeTracker = () => {
         medicationsTaken: defaultMeds
       });
     }
-  }, [selectedDate, medications]);
+  }, [selectedDate, entries, medications]);
 
   // Guardar entrada
-  const saveEntry = () => {
-    setEntries(prev => ({
-      ...prev,
-      [selectedDate]: dayEntry
-    }));
+  const saveEntry = async () => {
+    setIsSaving(true);
+    try {
+      // Upsert to Supabase (insert or update)
+      await supabase.from('entries').upsert({
+        date: selectedDate,
+        data: dayEntry,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'date' });
+
+      setEntries(prev => ({
+        ...prev,
+        [selectedDate]: dayEntry
+      }));
+    } catch (error) {
+      console.error('Error saving entry:', error);
+    }
+    setIsSaving(false);
     setCurrentView('calendar');
   };
 
@@ -217,8 +279,18 @@ const MeigeTracker = () => {
   };
 
   // Guardar Botox
-  const saveBotoxRecord = () => {
-    setBotoxRecords(prev => [...prev, { ...newBotox, id: Date.now() }]);
+  const saveBotoxRecord = async () => {
+    try {
+      const { data } = await supabase.from('botox_records').insert({
+        date: newBotox.date,
+        data: newBotox
+      }).select();
+      if (data && data[0]) {
+        setBotoxRecords(prev => [...prev, { ...newBotox, id: data[0].id }]);
+      }
+    } catch (error) {
+      console.error('Error saving botox record:', error);
+    }
     setNewBotox({
       date: new Date().toISOString().split('T')[0],
       totalDose: '',
@@ -231,8 +303,18 @@ const MeigeTracker = () => {
   };
 
   // Guardar consulta
-  const saveConsulta = () => {
-    setConsultas(prev => [...prev, { ...newConsulta, id: Date.now() }]);
+  const saveConsulta = async () => {
+    try {
+      const { data } = await supabase.from('consultas').insert({
+        date: newConsulta.date,
+        data: newConsulta
+      }).select();
+      if (data && data[0]) {
+        setConsultas(prev => [...prev, { ...newConsulta, id: data[0].id }]);
+      }
+    } catch (error) {
+      console.error('Error saving consulta:', error);
+    }
     setNewConsulta({
       date: new Date().toISOString().split('T')[0],
       tipo: 'Neurologista',
@@ -250,7 +332,7 @@ const MeigeTracker = () => {
     if (!dateStr) return '-';
     const [y, m, d] = dateStr.split('-');
     const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     return `${parseInt(d)} de ${months[parseInt(m) - 1]} de ${y}`;
   };
 
@@ -286,9 +368,9 @@ const MeigeTracker = () => {
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const days = [];
-    
-    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
     for (let i = 0; i < firstDay; i++) {
@@ -301,11 +383,11 @@ const MeigeTracker = () => {
       const hasBotox = botoxRecords.some(b => b.date === dateStr);
       const isSelected = dateStr === selectedDate;
       const isToday = dateStr === new Date().toISOString().split('T')[0];
-      
+
       let bgClass = 'bg-slate-700';
       if (hasEntry) {
         const avgSymptoms = (
-          (hasEntry.morningEyes || 0) + (hasEntry.afternoonEyes || 0) + (hasEntry.eveningEyes || 0) + 
+          (hasEntry.morningEyes || 0) + (hasEntry.afternoonEyes || 0) + (hasEntry.eveningEyes || 0) +
           (hasEntry.morningFace || 0) + (hasEntry.afternoonFace || 0) + (hasEntry.eveningFace || 0)
         ) / 6;
         if (avgSymptoms <= 2) bgClass = 'bg-sky-800';
@@ -341,7 +423,7 @@ const MeigeTracker = () => {
     return (
       <div>
         <div className="flex justify-between items-center mb-6">
-          <button 
+          <button
             onClick={() => setCurrentMonth(new Date(year, month - 1))}
             className="p-3 hover:bg-slate-700 rounded-lg text-slate-300"
           >
@@ -350,24 +432,24 @@ const MeigeTracker = () => {
           <h2 className="text-xl font-semibold text-slate-100">
             {monthNames[month]} {year}
           </h2>
-          <button 
+          <button
             onClick={() => setCurrentMonth(new Date(year, month + 1))}
             className="p-3 hover:bg-slate-700 rounded-lg text-slate-300"
           >
             Seguinte
           </button>
         </div>
-        
+
         <div className="grid grid-cols-7 gap-1 mb-2">
           {dayNames.map(d => (
             <div key={d} className="text-center text-sm font-medium text-slate-400 py-2">{d}</div>
           ))}
         </div>
-        
+
         <div className="grid grid-cols-7 gap-1">
           {days}
         </div>
-        
+
         <div className="mt-6 p-4 bg-slate-800 rounded-lg">
           <p className="text-sm text-slate-400 mb-2">Legenda:</p>
           <div className="flex flex-wrap gap-4 text-sm text-slate-300">
@@ -408,9 +490,8 @@ const MeigeTracker = () => {
     <div className="mb-5">
       <div className="flex justify-between items-center mb-2">
         <label className="font-medium text-slate-200">{label}</label>
-        <span className={`text-lg font-bold ${
-          value <= 2 ? 'text-sky-400' : value <= 5 ? 'text-slate-300' : 'text-slate-100'
-        }`}>{value}/10</span>
+        <span className={`text-lg font-bold ${value <= 2 ? 'text-sky-400' : value <= 5 ? 'text-slate-300' : 'text-slate-100'
+          }`}>{value}/10</span>
       </div>
       {description && <p className="text-sm text-slate-400 mb-2">{description}</p>}
       <input
@@ -441,11 +522,10 @@ const MeigeTracker = () => {
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
-            className={`px-4 py-2 rounded-lg text-sm transition-all ${
-              value === opt.value 
-                ? 'bg-sky-600 text-white' 
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm transition-all ${value === opt.value
+              ? 'bg-sky-600 text-white'
+              : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
           >
             {opt.label}
           </button>
@@ -472,7 +552,7 @@ const MeigeTracker = () => {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <button 
+          <button
             onClick={() => setCurrentView('calendar')}
             className="text-sky-400 hover:text-sky-300"
           >
@@ -486,14 +566,14 @@ const MeigeTracker = () => {
           <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
             Sono
           </h3>
-          
+
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm text-slate-400 mb-1">Hora de deitar</label>
               <input
                 type="time"
                 value={dayEntry.bedTime}
-                onChange={(e) => setDayEntry({...dayEntry, bedTime: e.target.value})}
+                onChange={(e) => setDayEntry({ ...dayEntry, bedTime: e.target.value })}
                 className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 focus:ring-2 focus:ring-sky-500"
               />
             </div>
@@ -502,12 +582,12 @@ const MeigeTracker = () => {
               <input
                 type="time"
                 value={dayEntry.wakeTime}
-                onChange={(e) => setDayEntry({...dayEntry, wakeTime: e.target.value})}
+                onChange={(e) => setDayEntry({ ...dayEntry, wakeTime: e.target.value })}
                 className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 focus:ring-2 focus:ring-sky-500"
               />
             </div>
           </div>
-          
+
           <div className="bg-slate-700 rounded-lg p-3 mb-4 text-center">
             <span className="text-slate-400">Total de sono: </span>
             <span className="font-bold text-sky-400">{calculateSleepHours()}</span>
@@ -519,12 +599,11 @@ const MeigeTracker = () => {
               {[0, 1, 2, 3, 4, 5].map(n => (
                 <button
                   key={n}
-                  onClick={() => setDayEntry({...dayEntry, sleepInterruptions: n})}
-                  className={`w-10 h-10 rounded-lg ${
-                    dayEntry.sleepInterruptions === n 
-                      ? 'bg-sky-600 text-white' 
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
+                  onClick={() => setDayEntry({ ...dayEntry, sleepInterruptions: n })}
+                  className={`w-10 h-10 rounded-lg ${dayEntry.sleepInterruptions === n
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
                 >
                   {n === 5 ? '5+' : n}
                 </button>
@@ -535,7 +614,7 @@ const MeigeTracker = () => {
           <SelectField
             label="Qualidade do sono"
             value={dayEntry.sleepQuality}
-            onChange={(v) => setDayEntry({...dayEntry, sleepQuality: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, sleepQuality: v })}
             options={[
               { value: 'adormeceu_facil', label: 'Adormeceu fácil' },
               { value: 'demorou', label: 'Demorou a adormecer' },
@@ -546,7 +625,7 @@ const MeigeTracker = () => {
           <SelectField
             label="Acordou descansada?"
             value={dayEntry.feltRested}
-            onChange={(v) => setDayEntry({...dayEntry, feltRested: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, feltRested: v })}
             options={[
               { value: 'sim', label: 'Sim, descansada' },
               { value: 'mais_menos', label: 'Mais ou menos' },
@@ -565,21 +644,21 @@ const MeigeTracker = () => {
           <SymptomSlider
             label="Olhos (blefarospasmo)"
             value={dayEntry.wakeEyes}
-            onChange={(v) => setDayEntry({...dayEntry, wakeEyes: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, wakeEyes: v })}
             description="0 = Sem espasmos | 10 = Olhos fecham involuntariamente"
           />
 
           <SymptomSlider
             label="Face e mandíbula"
             value={dayEntry.wakeFace}
-            onChange={(v) => setDayEntry({...dayEntry, wakeFace: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, wakeFace: v })}
             description="0 = Sem tensão | 10 = Movimentos involuntários fortes"
           />
 
           <SelectField
             label="Estado emocional ao acordar"
             value={dayEntry.wakeEmotion}
-            onChange={(v) => setDayEntry({...dayEntry, wakeEmotion: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, wakeEmotion: v })}
             options={[
               { value: 'normal', label: 'Normal' },
               { value: 'alguma_tristeza', label: 'Alguma tristeza' },
@@ -591,13 +670,13 @@ const MeigeTracker = () => {
           <CheckboxField
             label="Chorou ao acordar"
             checked={dayEntry.wakeCrying}
-            onChange={(v) => setDayEntry({...dayEntry, wakeCrying: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, wakeCrying: v })}
           />
 
           <SelectField
             label="Quanto tempo até estabilizar?"
             value={dayEntry.wakeStabilizeTime}
-            onChange={(v) => setDayEntry({...dayEntry, wakeStabilizeTime: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, wakeStabilizeTime: v })}
             options={[
               { value: 'imediato', label: 'Imediato' },
               { value: '15min', label: '15 minutos' },
@@ -618,19 +697,19 @@ const MeigeTracker = () => {
           <SymptomSlider
             label="Olhos"
             value={dayEntry.morningEyes}
-            onChange={(v) => setDayEntry({...dayEntry, morningEyes: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, morningEyes: v })}
           />
 
           <SymptomSlider
             label="Face e mandíbula"
             value={dayEntry.morningFace}
-            onChange={(v) => setDayEntry({...dayEntry, morningFace: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, morningFace: v })}
           />
 
           <SelectField
             label="Fala"
             value={dayEntry.morningSpeech}
-            onChange={(v) => setDayEntry({...dayEntry, morningSpeech: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, morningSpeech: v })}
             options={[
               { value: 'normal', label: 'Normal' },
               { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
@@ -642,7 +721,7 @@ const MeigeTracker = () => {
           <SelectField
             label="Comer e mastigar"
             value={dayEntry.morningEating}
-            onChange={(v) => setDayEntry({...dayEntry, morningEating: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, morningEating: v })}
             options={[
               { value: 'normal', label: 'Normal' },
               { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
@@ -661,19 +740,19 @@ const MeigeTracker = () => {
           <SymptomSlider
             label="Olhos"
             value={dayEntry.afternoonEyes}
-            onChange={(v) => setDayEntry({...dayEntry, afternoonEyes: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, afternoonEyes: v })}
           />
 
           <SymptomSlider
             label="Face e mandíbula"
             value={dayEntry.afternoonFace}
-            onChange={(v) => setDayEntry({...dayEntry, afternoonFace: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, afternoonFace: v })}
           />
 
           <SelectField
             label="Fala"
             value={dayEntry.afternoonSpeech}
-            onChange={(v) => setDayEntry({...dayEntry, afternoonSpeech: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, afternoonSpeech: v })}
             options={[
               { value: 'normal', label: 'Normal' },
               { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
@@ -685,7 +764,7 @@ const MeigeTracker = () => {
           <SelectField
             label="Comer e mastigar"
             value={dayEntry.afternoonEating}
-            onChange={(v) => setDayEntry({...dayEntry, afternoonEating: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, afternoonEating: v })}
             options={[
               { value: 'normal', label: 'Normal' },
               { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
@@ -704,19 +783,19 @@ const MeigeTracker = () => {
           <SymptomSlider
             label="Olhos"
             value={dayEntry.eveningEyes}
-            onChange={(v) => setDayEntry({...dayEntry, eveningEyes: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, eveningEyes: v })}
           />
 
           <SymptomSlider
             label="Face e mandíbula"
             value={dayEntry.eveningFace}
-            onChange={(v) => setDayEntry({...dayEntry, eveningFace: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, eveningFace: v })}
           />
 
           <SelectField
             label="Fala"
             value={dayEntry.eveningSpeech}
-            onChange={(v) => setDayEntry({...dayEntry, eveningSpeech: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, eveningSpeech: v })}
             options={[
               { value: 'normal', label: 'Normal' },
               { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
@@ -728,7 +807,7 @@ const MeigeTracker = () => {
           <SelectField
             label="Comer e mastigar"
             value={dayEntry.eveningEating}
-            onChange={(v) => setDayEntry({...dayEntry, eveningEating: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, eveningEating: v })}
             options={[
               { value: 'normal', label: 'Normal' },
               { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
@@ -747,7 +826,7 @@ const MeigeTracker = () => {
           <CheckboxField
             label="Houve algum período bom hoje?"
             checked={dayEntry.hadGoodPeriod}
-            onChange={(v) => setDayEntry({...dayEntry, hadGoodPeriod: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, hadGoodPeriod: v })}
           />
 
           {dayEntry.hadGoodPeriod && (
@@ -755,7 +834,7 @@ const MeigeTracker = () => {
               <SelectField
                 label="Quando foi?"
                 value={dayEntry.goodPeriodWhen}
-                onChange={(v) => setDayEntry({...dayEntry, goodPeriodWhen: v})}
+                onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodWhen: v })}
                 options={[
                   { value: 'manha_cedo', label: 'Manhã cedo' },
                   { value: 'manha', label: 'Manhã' },
@@ -769,7 +848,7 @@ const MeigeTracker = () => {
               <SelectField
                 label="Quanto tempo durou?"
                 value={dayEntry.goodPeriodDuration}
-                onChange={(v) => setDayEntry({...dayEntry, goodPeriodDuration: v})}
+                onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodDuration: v })}
                 options={[
                   { value: '15min', label: '15 minutos' },
                   { value: '30min', label: '30 minutos' },
@@ -806,17 +885,16 @@ const MeigeTracker = () => {
                       <span className="text-sm text-slate-300 capitalize">{time}</span>
                       <button
                         onClick={() => {
-                          const newMeds = {...dayEntry.medicationsTaken};
+                          const newMeds = { ...dayEntry.medicationsTaken };
                           if (!newMeds[med.id]) newMeds[med.id] = {};
                           if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true };
                           newMeds[med.id][time].taken = !newMeds[med.id][time].taken;
-                          setDayEntry({...dayEntry, medicationsTaken: newMeds});
+                          setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                         }}
-                        className={`px-3 py-1 rounded text-sm ${
-                          dayEntry.medicationsTaken?.[med.id]?.[time]?.taken !== false
-                            ? 'bg-sky-600 text-white'
-                            : 'bg-slate-500 text-slate-300'
-                        }`}
+                        className={`px-3 py-1 rounded text-sm ${dayEntry.medicationsTaken?.[med.id]?.[time]?.taken !== false
+                          ? 'bg-sky-600 text-white'
+                          : 'bg-slate-500 text-slate-300'
+                          }`}
                       >
                         {dayEntry.medicationsTaken?.[med.id]?.[time]?.taken !== false ? 'Tomou' : 'Não tomou'}
                       </button>
@@ -828,11 +906,11 @@ const MeigeTracker = () => {
                           type="time"
                           value={dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour}
                           onChange={(e) => {
-                            const newMeds = {...dayEntry.medicationsTaken};
+                            const newMeds = { ...dayEntry.medicationsTaken };
                             if (!newMeds[med.id]) newMeds[med.id] = {};
                             if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true };
                             newMeds[med.id][time].hour = e.target.value;
-                            setDayEntry({...dayEntry, medicationsTaken: newMeds});
+                            setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                           }}
                           className="w-full p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
                         />
@@ -846,11 +924,11 @@ const MeigeTracker = () => {
                           step="0.5"
                           value={dayEntry.medicationsTaken?.[med.id]?.[time]?.qty ?? config.qty}
                           onChange={(e) => {
-                            const newMeds = {...dayEntry.medicationsTaken};
+                            const newMeds = { ...dayEntry.medicationsTaken };
                             if (!newMeds[med.id]) newMeds[med.id] = {};
                             if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true };
                             newMeds[med.id][time].qty = parseFloat(e.target.value) || 0;
-                            setDayEntry({...dayEntry, medicationsTaken: newMeds});
+                            setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                           }}
                           className="w-full p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm text-center"
                         />
@@ -866,7 +944,7 @@ const MeigeTracker = () => {
             <label className="block text-sm text-slate-400 mb-1">Notas sobre medicação</label>
             <textarea
               value={dayEntry.medicationNotes}
-              onChange={(e) => setDayEntry({...dayEntry, medicationNotes: e.target.value})}
+              onChange={(e) => setDayEntry({ ...dayEntry, medicationNotes: e.target.value })}
               className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
               rows={2}
               placeholder="Atrasou? Esqueceu? Algum efeito diferente?"
@@ -884,17 +962,16 @@ const MeigeTracker = () => {
                 <button
                   key={effect.key}
                   onClick={() => setDayEntry({
-                    ...dayEntry, 
+                    ...dayEntry,
                     sideEffects: {
-                      ...dayEntry.sideEffects, 
+                      ...dayEntry.sideEffects,
                       [effect.key]: !dayEntry.sideEffects[effect.key]
                     }
                   })}
-                  className={`px-3 py-2 rounded-lg text-sm ${
-                    dayEntry.sideEffects[effect.key]
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
+                  className={`px-3 py-2 rounded-lg text-sm ${dayEntry.sideEffects[effect.key]
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-slate-700 text-slate-300'
+                    }`}
                 >
                   {effect.label}
                 </button>
@@ -920,17 +997,16 @@ const MeigeTracker = () => {
               <button
                 key={trigger.key}
                 onClick={() => setDayEntry({
-                  ...dayEntry, 
+                  ...dayEntry,
                   triggers: {
-                    ...dayEntry.triggers, 
+                    ...dayEntry.triggers,
                     [trigger.key]: !dayEntry.triggers[trigger.key]
                   }
                 })}
-                className={`px-4 py-2 rounded-lg text-sm ${
-                  dayEntry.triggers[trigger.key]
-                    ? 'bg-sky-600 text-white'
-                    : 'bg-slate-700 text-slate-300'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm ${dayEntry.triggers[trigger.key]
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-slate-700 text-slate-300'
+                  }`}
               >
                 {trigger.label}
               </button>
@@ -943,8 +1019,8 @@ const MeigeTracker = () => {
               type="text"
               value={dayEntry.triggers.other}
               onChange={(e) => setDayEntry({
-                ...dayEntry, 
-                triggers: {...dayEntry.triggers, other: e.target.value}
+                ...dayEntry,
+                triggers: { ...dayEntry.triggers, other: e.target.value }
               })}
               className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
               placeholder="Discussão, notícia má, etc."
@@ -961,7 +1037,7 @@ const MeigeTracker = () => {
           <CheckboxField
             label="Tristeza sem motivo aparente"
             checked={dayEntry.sadnessNoReason}
-            onChange={(v) => setDayEntry({...dayEntry, sadnessNoReason: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, sadnessNoReason: v })}
           />
 
           <div className="mb-4">
@@ -970,12 +1046,11 @@ const MeigeTracker = () => {
               {[0, 1, 2, 3, 4, 5].map(n => (
                 <button
                   key={n}
-                  onClick={() => setDayEntry({...dayEntry, cryingEpisodes: n})}
-                  className={`w-10 h-10 rounded-lg ${
-                    dayEntry.cryingEpisodes === n 
-                      ? 'bg-sky-600 text-white' 
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
+                  onClick={() => setDayEntry({ ...dayEntry, cryingEpisodes: n })}
+                  className={`w-10 h-10 rounded-lg ${dayEntry.cryingEpisodes === n
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-700 text-slate-300'
+                    }`}
                 >
                   {n === 5 ? '5+' : n}
                 </button>
@@ -986,13 +1061,13 @@ const MeigeTracker = () => {
           <CheckboxField
             label="Irritabilidade"
             checked={dayEntry.irritability}
-            onChange={(v) => setDayEntry({...dayEntry, irritability: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, irritability: v })}
           />
 
           <SelectField
             label="Nível de ansiedade"
             value={dayEntry.anxiety}
-            onChange={(v) => setDayEntry({...dayEntry, anxiety: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, anxiety: v })}
             options={[
               { value: 'nenhuma', label: 'Nenhuma' },
               { value: 'ligeira', label: 'Ligeira' },
@@ -1011,7 +1086,7 @@ const MeigeTracker = () => {
           <SelectField
             label="Conseguiu sair de casa?"
             value={dayEntry.leftHouse}
-            onChange={(v) => setDayEntry({...dayEntry, leftHouse: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, leftHouse: v })}
             options={[
               { value: 'sim', label: 'Sim' },
               { value: 'com_dificuldade', label: 'Com dificuldade' },
@@ -1023,7 +1098,7 @@ const MeigeTracker = () => {
           <SelectField
             label="Tarefas normais do dia"
             value={dayEntry.normalTasks}
-            onChange={(v) => setDayEntry({...dayEntry, normalTasks: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, normalTasks: v })}
             options={[
               { value: 'todas', label: 'Fez todas' },
               { value: 'maioria', label: 'Fez a maioria' },
@@ -1035,7 +1110,7 @@ const MeigeTracker = () => {
           <CheckboxField
             label="Precisou de ajuda"
             checked={dayEntry.neededHelp}
-            onChange={(v) => setDayEntry({...dayEntry, neededHelp: v})}
+            onChange={(v) => setDayEntry({ ...dayEntry, neededHelp: v })}
           />
         </section>
 
@@ -1045,7 +1120,7 @@ const MeigeTracker = () => {
             <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
               Efeito do Botox
             </h3>
-            
+
             <div className="bg-slate-700 rounded-lg p-3 mb-4 text-center">
               <span className="text-slate-400">Dias desde última injecção: </span>
               <span className="font-bold text-sky-400">{daysSinceBotox()}</span>
@@ -1054,7 +1129,7 @@ const MeigeTracker = () => {
             <SelectField
               label="Sente que o efeito está a diminuir?"
               value={dayEntry.botoxEffect}
-              onChange={(v) => setDayEntry({...dayEntry, botoxEffect: v})}
+              onChange={(v) => setDayEntry({ ...dayEntry, botoxEffect: v })}
               options={[
                 { value: 'bom', label: 'Ainda está bom' },
                 { value: 'a_diminuir', label: 'A começar a diminuir' },
@@ -1070,10 +1145,10 @@ const MeigeTracker = () => {
           <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
             Notas do dia
           </h3>
-          
+
           <textarea
             value={dayEntry.notes}
-            onChange={(e) => setDayEntry({...dayEntry, notes: e.target.value})}
+            onChange={(e) => setDayEntry({ ...dayEntry, notes: e.target.value })}
             className="w-full p-4 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
             rows={4}
             placeholder="Qualquer observação importante para o médico..."
@@ -1094,14 +1169,14 @@ const MeigeTracker = () => {
   // Configuração de medicamentos
   const renderMedicationSetup = () => {
     const timeLabels = ['manhã', 'almoço', 'tarde', 'noite'];
-    
+
     return (
       <div className="max-w-xl mx-auto">
         <h2 className="text-xl font-semibold text-slate-100 mb-2">Configurar medicamentos</h2>
         <p className="text-slate-400 text-sm mb-6">
           Coloque a dose que está na caixa e quantos comprimidos toma em cada altura do dia.
         </p>
-        
+
         {medications.map((med, idx) => (
           <div key={med.id} className="bg-slate-800 rounded-xl p-5 mb-4">
             <div className="mb-4">
@@ -1118,7 +1193,7 @@ const MeigeTracker = () => {
                 placeholder="Ex: Rivotril"
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">Dose por comprimido</label>
@@ -1152,15 +1227,15 @@ const MeigeTracker = () => {
                 </select>
               </div>
             </div>
-            
+
             <div>
               <label className="block text-xs text-slate-400 mb-2">Quando toma</label>
               <div className="grid grid-cols-2 gap-2">
                 {timeLabels.map(time => {
                   const isActive = med.times[time] !== undefined;
                   return (
-                    <div 
-                      key={time} 
+                    <div
+                      key={time}
                       className={`rounded-lg p-3 ${isActive ? 'bg-slate-600' : 'bg-slate-700'}`}
                     >
                       <div className="flex items-center gap-2 mb-2">
@@ -1216,7 +1291,7 @@ const MeigeTracker = () => {
                 })}
               </div>
             </div>
-            
+
             <button
               onClick={() => setMedications(medications.filter((_, i) => i !== idx))}
               className="mt-4 text-sm text-red-400 hover:text-red-300"
@@ -1225,22 +1300,29 @@ const MeigeTracker = () => {
             </button>
           </div>
         ))}
-        
+
         <button
-          onClick={() => setMedications([...medications, { 
-            id: Date.now(), 
-            name: '', 
-            dosePerPill: '', 
+          onClick={() => setMedications([...medications, {
+            id: Date.now(),
+            name: '',
+            dosePerPill: '',
             unit: 'mg',
-            times: {} 
+            times: {}
           }])}
           className="w-full py-3 border-2 border-dashed border-slate-600 rounded-xl text-slate-400 hover:border-sky-500 hover:text-sky-400 mb-4"
         >
           Adicionar medicamento
         </button>
-        
+
         <button
-          onClick={() => setShowMedicationSetup(false)}
+          onClick={async () => {
+            try {
+              await supabase.from('medications').insert({ data: medications });
+            } catch (error) {
+              console.error('Error saving medications:', error);
+            }
+            setShowMedicationSetup(false);
+          }}
           className="w-full py-4 bg-sky-600 text-white font-semibold rounded-xl hover:bg-sky-500"
         >
           Guardar configuração
@@ -1264,11 +1346,11 @@ const MeigeTracker = () => {
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div>
               <label className="block text-sm text-slate-400 mb-1">Data</label>
-              <input type="date" value={newConsulta.date} onChange={(e) => setNewConsulta({...newConsulta, date: e.target.value})} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
+              <input type="date" value={newConsulta.date} onChange={(e) => setNewConsulta({ ...newConsulta, date: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
             </div>
             <div>
               <label className="block text-sm text-slate-400 mb-1">Tipo</label>
-              <select value={newConsulta.tipo} onChange={(e) => setNewConsulta({...newConsulta, tipo: e.target.value})} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100">
+              <select value={newConsulta.tipo} onChange={(e) => setNewConsulta({ ...newConsulta, tipo: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100">
                 {tiposConsulta.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
@@ -1276,24 +1358,24 @@ const MeigeTracker = () => {
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div>
               <label className="block text-sm text-slate-400 mb-1">Médico</label>
-              <input type="text" value={newConsulta.medico} onChange={(e) => setNewConsulta({...newConsulta, medico: e.target.value})} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
+              <input type="text" value={newConsulta.medico} onChange={(e) => setNewConsulta({ ...newConsulta, medico: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
             </div>
             <div>
               <label className="block text-sm text-slate-400 mb-1">Clínica</label>
-              <input type="text" value={newConsulta.clinica} onChange={(e) => setNewConsulta({...newConsulta, clinica: e.target.value})} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
+              <input type="text" value={newConsulta.clinica} onChange={(e) => setNewConsulta({ ...newConsulta, clinica: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
             </div>
           </div>
           <div className="mb-4">
             <label className="block text-sm text-slate-400 mb-1">Motivo</label>
-            <input type="text" value={newConsulta.motivo} onChange={(e) => setNewConsulta({...newConsulta, motivo: e.target.value})} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="Revisão, ajuste medicação, dores..." />
+            <input type="text" value={newConsulta.motivo} onChange={(e) => setNewConsulta({ ...newConsulta, motivo: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="Revisão, ajuste medicação, dores..." />
           </div>
           <div className="mb-4">
             <label className="block text-sm text-slate-400 mb-1">Notas</label>
-            <textarea value={newConsulta.notas} onChange={(e) => setNewConsulta({...newConsulta, notas: e.target.value})} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" rows={3} />
+            <textarea value={newConsulta.notas} onChange={(e) => setNewConsulta({ ...newConsulta, notas: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" rows={3} />
           </div>
           <div className="mb-4">
             <label className="block text-sm text-slate-400 mb-1">Próxima consulta</label>
-            <input type="date" value={newConsulta.proximaConsulta} onChange={(e) => setNewConsulta({...newConsulta, proximaConsulta: e.target.value})} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
+            <input type="date" value={newConsulta.proximaConsulta} onChange={(e) => setNewConsulta({ ...newConsulta, proximaConsulta: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
           </div>
           <div className="flex gap-3">
             <button onClick={() => setShowConsultaForm(false)} className="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl">Cancelar</button>
@@ -1338,7 +1420,7 @@ const MeigeTracker = () => {
   const renderBotoxSection = () => (
     <div className="max-w-xl mx-auto">
       <h2 className="text-xl font-semibold text-slate-100 mb-6">Registo de Botox</h2>
-      
+
       {daysSinceBotox() !== null && (
         <div className="bg-slate-800 rounded-xl p-6 mb-6 text-center">
           <p className="text-slate-400 mb-2">Dias desde a última injecção</p>
@@ -1359,13 +1441,13 @@ const MeigeTracker = () => {
       ) : (
         <div className="bg-slate-800 rounded-xl p-5 mb-6">
           <h3 className="text-lg font-semibold text-slate-100 mb-4">Nova injecção</h3>
-          
+
           <div className="mb-4">
             <label className="block text-sm text-slate-400 mb-1">Data</label>
             <input
               type="date"
               value={newBotox.date}
-              onChange={(e) => setNewBotox({...newBotox, date: e.target.value})}
+              onChange={(e) => setNewBotox({ ...newBotox, date: e.target.value })}
               className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
             />
           </div>
@@ -1375,7 +1457,7 @@ const MeigeTracker = () => {
             <input
               type="text"
               value={newBotox.totalDose}
-              onChange={(e) => setNewBotox({...newBotox, totalDose: e.target.value})}
+              onChange={(e) => setNewBotox({ ...newBotox, totalDose: e.target.value })}
               className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
               placeholder="Ex: 100U"
             />
@@ -1383,7 +1465,7 @@ const MeigeTracker = () => {
 
           <div className="mb-4">
             <label className="block text-sm text-slate-400 mb-2">Locais de injecção</label>
-            
+
             {['Olhos', 'Face'].map(group => (
               <div key={group} className="mb-4">
                 <p className="text-xs text-slate-500 uppercase mb-2">{group}</p>
@@ -1394,13 +1476,13 @@ const MeigeTracker = () => {
                         type="checkbox"
                         checked={newBotox.sites[site.id]?.selected || false}
                         onChange={(e) => {
-                          const newSites = {...newBotox.sites};
+                          const newSites = { ...newBotox.sites };
                           if (e.target.checked) {
                             newSites[site.id] = { selected: true, dose: '' };
                           } else {
                             delete newSites[site.id];
                           }
-                          setNewBotox({...newBotox, sites: newSites});
+                          setNewBotox({ ...newBotox, sites: newSites });
                         }}
                         className="w-4 h-4 rounded bg-slate-600 border-slate-500 text-sky-500"
                       />
@@ -1410,9 +1492,9 @@ const MeigeTracker = () => {
                           type="text"
                           value={newBotox.sites[site.id]?.dose || ''}
                           onChange={(e) => {
-                            const newSites = {...newBotox.sites};
+                            const newSites = { ...newBotox.sites };
                             newSites[site.id].dose = e.target.value;
-                            setNewBotox({...newBotox, sites: newSites});
+                            setNewBotox({ ...newBotox, sites: newSites });
                           }}
                           className="w-20 p-2 rounded bg-slate-600 border border-slate-500 text-slate-100 text-sm text-center"
                           placeholder="U"
@@ -1431,7 +1513,7 @@ const MeigeTracker = () => {
               <input
                 type="text"
                 value={newBotox.doctor}
-                onChange={(e) => setNewBotox({...newBotox, doctor: e.target.value})}
+                onChange={(e) => setNewBotox({ ...newBotox, doctor: e.target.value })}
                 className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
               />
             </div>
@@ -1440,7 +1522,7 @@ const MeigeTracker = () => {
               <input
                 type="text"
                 value={newBotox.clinic}
-                onChange={(e) => setNewBotox({...newBotox, clinic: e.target.value})}
+                onChange={(e) => setNewBotox({ ...newBotox, clinic: e.target.value })}
                 className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
               />
             </div>
@@ -1450,7 +1532,7 @@ const MeigeTracker = () => {
             <label className="block text-sm text-slate-400 mb-1">Notas</label>
             <textarea
               value={newBotox.notes}
-              onChange={(e) => setNewBotox({...newBotox, notes: e.target.value})}
+              onChange={(e) => setNewBotox({ ...newBotox, notes: e.target.value })}
               className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
               rows={2}
               placeholder="Como correu, se doeu, etc."
@@ -1519,11 +1601,11 @@ const MeigeTracker = () => {
     const chartData = prepareChartData();
     const triggersData = getTriggersData();
     const entryDates = Object.keys(entries).sort().reverse();
-    
+
     return (
       <div className="max-w-2xl mx-auto">
         <h2 className="text-xl font-semibold text-slate-100 mb-6">Relatório para o médico</h2>
-        
+
         {entryDates.length === 0 ? (
           <div className="text-center py-12 text-slate-400">
             <p className="text-lg mb-2">Ainda não há registos</p>
@@ -1632,6 +1714,17 @@ const MeigeTracker = () => {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">💊</div>
+          <p className="text-slate-400">A carregar dados...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Header */}
@@ -1672,11 +1765,10 @@ const MeigeTracker = () => {
                     setShowMedicationSetup(false);
                   }
                 }}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                  (currentView === tab.id || (tab.id === 'settings' && showMedicationSetup))
-                    ? 'bg-sky-600 text-white'
-                    : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${(currentView === tab.id || (tab.id === 'settings' && showMedicationSetup))
+                  ? 'bg-sky-600 text-white'
+                  : 'text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                  }`}
               >
                 {tab.label}
               </button>
@@ -1688,11 +1780,11 @@ const MeigeTracker = () => {
       {/* Main */}
       <main className="max-w-4xl mx-auto px-4 py-6">
         {showMedicationSetup ? renderMedicationSetup() :
-         currentView === 'calendar' ? renderCalendar() :
-         currentView === 'entry' ? renderEntryForm() :
-         currentView === 'botox' ? renderBotoxSection() :
-         currentView === 'consultas' ? renderConsultas() :
-         currentView === 'report' ? renderReport() : null}
+          currentView === 'calendar' ? renderCalendar() :
+            currentView === 'entry' ? renderEntryForm() :
+              currentView === 'botox' ? renderBotoxSection() :
+                currentView === 'consultas' ? renderConsultas() :
+                  currentView === 'report' ? renderReport() : null}
       </main>
 
       {/* Footer */}
