@@ -1078,7 +1078,7 @@ const MeigeTracker = () => {
                 <button
                   onClick={() => {
                     const newMeds = { ...dayEntry.medicationsTaken };
-                    if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true };
+                    if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true, timing: 'depois' };
                     newMeds[med.id].taken = !newMeds[med.id].taken;
                     setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                   }}
@@ -1090,7 +1090,7 @@ const MeigeTracker = () => {
                   {dayEntry.medicationsTaken?.[med.id]?.taken !== false ? 'Tomou ✓' : 'Não tomou'}
                 </button>
               </div>
-              <div className="mt-3 flex items-center gap-3">
+              <div className="mt-3 flex items-center gap-3 flex-wrap">
                 <label className="text-sm text-slate-400">Total hoje:</label>
                 <input
                   type="number"
@@ -1100,7 +1100,7 @@ const MeigeTracker = () => {
                   value={dayEntry.medicationsTaken?.[med.id]?.qty ?? 0}
                   onChange={(e) => {
                     const newMeds = { ...dayEntry.medicationsTaken };
-                    if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true };
+                    if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true, timing: 'depois' };
                     newMeds[med.id].qty = parseFloat(e.target.value) || 0;
                     setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                   }}
@@ -1109,6 +1109,36 @@ const MeigeTracker = () => {
                 <span className="text-sm text-slate-400">
                   {med.unit === 'gotas' ? 'gotas' : 'comprimidos'}
                 </span>
+                <div className="flex gap-2 ml-auto">
+                  <button
+                    onClick={() => {
+                      const newMeds = { ...dayEntry.medicationsTaken };
+                      if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true, timing: 'antes' };
+                      else newMeds[med.id].timing = 'antes';
+                      setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                    }}
+                    className={`px-3 py-1 rounded text-sm ${dayEntry.medicationsTaken?.[med.id]?.timing === 'antes'
+                        ? 'bg-sky-600 text-white'
+                        : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+                      }`}
+                  >
+                    Antes
+                  </button>
+                  <button
+                    onClick={() => {
+                      const newMeds = { ...dayEntry.medicationsTaken };
+                      if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true, timing: 'depois' };
+                      else newMeds[med.id].timing = 'depois';
+                      setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                    }}
+                    className={`px-3 py-1 rounded text-sm ${(dayEntry.medicationsTaken?.[med.id]?.timing ?? 'depois') === 'depois'
+                        ? 'bg-sky-600 text-white'
+                        : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+                      }`}
+                  >
+                    Depois
+                  </button>
+                </div>
               </div>
             </div>
           ))}
