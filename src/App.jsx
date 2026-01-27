@@ -280,17 +280,55 @@ const MeigeTracker = () => {
   }, []);
 
   // Update dayEntry when selectedDate or entries change
-  // Simple medication tracking: just medication ID, quantity, and taken status
+  // Auto-populate medication from previous day's data or use defaults
   useEffect(() => {
     if (entries[selectedDate]) {
       // Load saved entry
       setDayEntry(entries[selectedDate]);
     } else {
-      // New entry: initialize with empty medications (user fills in what they took)
-      const defaultMeds = {};
-      medications.forEach(med => {
-        defaultMeds[med.id] = { qty: 0, taken: true };
-      });
+      // New entry: try to get medication data from most recent previous day
+      const sortedDates = Object.keys(entries).sort().reverse();
+      const previousDate = sortedDates.find(d => d < selectedDate);
+
+      let defaultMeds = {};
+
+      if (previousDate && entries[previousDate]?.medicationsTaken) {
+        // Copy from previous day
+        defaultMeds = JSON.parse(JSON.stringify(entries[previousDate].medicationsTaken));
+      } else {
+        // First time setup with defaults
+        // Rivotril: 0.5 manhã, 1 tarde, 3 noite
+        // Artane: 1, 1, 1
+        // Metibasol: 1 tarde
+        // Colesterol: 1 noite
+        medications.forEach(med => {
+          const name = med.name.toLowerCase();
+          defaultMeds[med.id] = {};
+
+          if (name.includes('rivotril')) {
+            defaultMeds[med.id] = {
+              manha: { active: true, hour: '10', qty: 0.5, timing: 'depois' },
+              tarde: { active: true, hour: '14', qty: 1, timing: 'depois' },
+              noite: { active: true, hour: '22', qty: 3, timing: 'depois' }
+            };
+          } else if (name.includes('artane')) {
+            defaultMeds[med.id] = {
+              manha: { active: true, hour: '10', qty: 1, timing: 'depois' },
+              tarde: { active: true, hour: '14', qty: 1, timing: 'depois' },
+              noite: { active: true, hour: '22', qty: 1, timing: 'depois' }
+            };
+          } else if (name.includes('metibasol')) {
+            defaultMeds[med.id] = {
+              tarde: { active: true, hour: '14', qty: 1, timing: 'depois' }
+            };
+          } else if (name.includes('colesterol')) {
+            defaultMeds[med.id] = {
+              noite: { active: true, hour: '22', qty: 1, timing: 'depois' }
+            };
+          }
+        });
+      }
+
       setDayEntry({
         ...getDefaultDayEntry(),
         medicationsTaken: defaultMeds
@@ -1164,8 +1202,8 @@ const MeigeTracker = () => {
                                   setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                                 }}
                                 className={`flex-1 px-2 py-1 rounded text-xs ${periodData?.timing === 'antes'
-                                    ? 'bg-sky-600 text-white'
-                                    : 'bg-slate-700 text-slate-300'
+                                  ? 'bg-sky-600 text-white'
+                                  : 'bg-slate-700 text-slate-300'
                                   }`}
                               >
                                 Antes
@@ -1179,8 +1217,8 @@ const MeigeTracker = () => {
                                   setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                                 }}
                                 className={`flex-1 px-2 py-1 rounded text-xs ${(periodData?.timing ?? 'depois') === 'depois'
-                                    ? 'bg-sky-600 text-white'
-                                    : 'bg-slate-700 text-slate-300'
+                                  ? 'bg-sky-600 text-white'
+                                  : 'bg-slate-700 text-slate-300'
                                   }`}
                               >
                                 Depois
