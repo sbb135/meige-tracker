@@ -2257,8 +2257,7 @@ const MeigeTracker = () => {
             Entrar
           </button>
 
-          <p className="text-slate-500 text-sm mt-6">Feito com ❤️ pela tua família</p>
-          <p className="text-slate-600 text-xs mt-1">Estamos sempre contigo, mãe!</p>
+          <p className="text-slate-500 text-sm mt-6">Com amor, para ti mãe ❤️</p>
         </div>
       </div>
     );
