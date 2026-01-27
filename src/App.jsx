@@ -1064,10 +1064,16 @@ const MeigeTracker = () => {
             Medicação
           </h3>
 
-          {medications.map(med => (
-            <div key={med.id} className="bg-slate-700 rounded-lg p-4 mb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
+          {medications.map(med => {
+            const periods = [
+              { id: 'manha', label: 'Manhã', defaultHour: '10' },
+              { id: 'tarde', label: 'Tarde', defaultHour: '14' },
+              { id: 'noite', label: 'Noite', defaultHour: '22' }
+            ];
+
+            return (
+              <div key={med.id} className="bg-slate-700 rounded-lg p-4 mb-3">
+                <div className="mb-3">
                   <span className="font-medium text-slate-200">{med.name}</span>
                   {med.dosePerPill && (
                     <span className="text-sm text-slate-400 ml-2">
@@ -1075,73 +1081,120 @@ const MeigeTracker = () => {
                     </span>
                   )}
                 </div>
-                <button
-                  onClick={() => {
-                    const newMeds = { ...dayEntry.medicationsTaken };
-                    if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true, timing: 'depois' };
-                    newMeds[med.id].taken = !newMeds[med.id].taken;
-                    setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium ${dayEntry.medicationsTaken?.[med.id]?.taken !== false
-                    ? 'bg-sky-600 text-white'
-                    : 'bg-slate-500 text-slate-300'
-                    }`}
-                >
-                  {dayEntry.medicationsTaken?.[med.id]?.taken !== false ? 'Tomou ✓' : 'Não tomou'}
-                </button>
-              </div>
-              <div className="mt-3 flex items-center gap-3 flex-wrap">
-                <label className="text-sm text-slate-400">Total hoje:</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="50"
-                  step="0.5"
-                  value={dayEntry.medicationsTaken?.[med.id]?.qty ?? 0}
-                  onChange={(e) => {
-                    const newMeds = { ...dayEntry.medicationsTaken };
-                    if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true, timing: 'depois' };
-                    newMeds[med.id].qty = parseFloat(e.target.value) || 0;
-                    setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                  }}
-                  className="w-20 p-2 rounded-lg bg-slate-600 border border-slate-500 text-slate-100 text-center"
-                />
-                <span className="text-sm text-slate-400">
-                  {med.unit === 'gotas' ? 'gotas' : 'comprimidos'}
-                </span>
-                <div className="flex gap-2 ml-auto">
-                  <button
-                    onClick={() => {
-                      const newMeds = { ...dayEntry.medicationsTaken };
-                      if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true, timing: 'antes' };
-                      else newMeds[med.id].timing = 'antes';
-                      setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                    }}
-                    className={`px-3 py-1 rounded text-sm ${dayEntry.medicationsTaken?.[med.id]?.timing === 'antes'
-                      ? 'bg-sky-600 text-white'
-                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
-                      }`}
-                  >
-                    Antes
-                  </button>
-                  <button
-                    onClick={() => {
-                      const newMeds = { ...dayEntry.medicationsTaken };
-                      if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true, timing: 'depois' };
-                      else newMeds[med.id].timing = 'depois';
-                      setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                    }}
-                    className={`px-3 py-1 rounded text-sm ${(dayEntry.medicationsTaken?.[med.id]?.timing ?? 'depois') === 'depois'
-                      ? 'bg-sky-600 text-white'
-                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
-                      }`}
-                  >
-                    Depois
-                  </button>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {periods.map(period => {
+                    const periodData = dayEntry.medicationsTaken?.[med.id]?.[period.id];
+                    const isActive = periodData?.active !== false && periodData !== undefined;
+
+                    return (
+                      <div
+                        key={period.id}
+                        className={`rounded-lg p-3 ${isActive ? 'bg-slate-600' : 'bg-slate-800'}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <button
+                            onClick={() => {
+                              const newMeds = { ...dayEntry.medicationsTaken };
+                              if (!newMeds[med.id]) newMeds[med.id] = {};
+                              if (!newMeds[med.id][period.id]) {
+                                newMeds[med.id][period.id] = {
+                                  active: true,
+                                  hour: period.defaultHour,
+                                  qty: 1,
+                                  timing: 'depois'
+                                };
+                              } else {
+                                newMeds[med.id][period.id].active = !newMeds[med.id][period.id].active;
+                              }
+                              setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                            }}
+                            className={`text-sm font-medium ${isActive ? 'text-sky-400' : 'text-slate-400'}`}
+                          >
+                            {period.label}
+                          </button>
+                          {isActive && (
+                            <span className="text-xs px-2 py-0.5 bg-sky-600 text-white rounded">Tomou</span>
+                          )}
+                        </div>
+
+                        {isActive && (
+                          <>
+                            <div className="flex items-center gap-2 mb-2">
+                              <label className="text-xs text-slate-400">Hora</label>
+                              <select
+                                value={periodData?.hour || period.defaultHour}
+                                onChange={(e) => {
+                                  const newMeds = { ...dayEntry.medicationsTaken };
+                                  if (!newMeds[med.id]) newMeds[med.id] = {};
+                                  if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'depois' };
+                                  newMeds[med.id][period.id].hour = e.target.value;
+                                  setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                                }}
+                                className="flex-1 p-1 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
+                              >
+                                {Array.from({ length: 24 }, (_, i) => (
+                                  <option key={i} value={String(i).padStart(2, '0')}>{i}h</option>
+                                ))}
+                              </select>
+                              <label className="text-xs text-slate-400">Qtd.</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="20"
+                                step="0.5"
+                                value={periodData?.qty ?? 1}
+                                onChange={(e) => {
+                                  const newMeds = { ...dayEntry.medicationsTaken };
+                                  if (!newMeds[med.id]) newMeds[med.id] = {};
+                                  if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'depois' };
+                                  newMeds[med.id][period.id].qty = parseFloat(e.target.value) || 0;
+                                  setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                                }}
+                                className="w-14 p-1 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm text-center"
+                              />
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => {
+                                  const newMeds = { ...dayEntry.medicationsTaken };
+                                  if (!newMeds[med.id]) newMeds[med.id] = {};
+                                  if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'antes' };
+                                  else newMeds[med.id][period.id].timing = 'antes';
+                                  setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                                }}
+                                className={`flex-1 px-2 py-1 rounded text-xs ${periodData?.timing === 'antes'
+                                    ? 'bg-sky-600 text-white'
+                                    : 'bg-slate-700 text-slate-300'
+                                  }`}
+                              >
+                                Antes
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const newMeds = { ...dayEntry.medicationsTaken };
+                                  if (!newMeds[med.id]) newMeds[med.id] = {};
+                                  if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'depois' };
+                                  else newMeds[med.id][period.id].timing = 'depois';
+                                  setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                                }}
+                                className={`flex-1 px-2 py-1 rounded text-xs ${(periodData?.timing ?? 'depois') === 'depois'
+                                    ? 'bg-sky-600 text-white'
+                                    : 'bg-slate-700 text-slate-300'
+                                  }`}
+                              >
+                                Depois
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           <div className="mt-4">
             <label className="block text-sm text-slate-400 mb-1">Notas sobre medicação</label>
