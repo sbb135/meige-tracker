@@ -341,13 +341,24 @@ const MeigeTracker = () => {
     return `${hours}h ${mins}m`;
   };
 
-  // Dias desde último Botox
+  // Dias desde último Botox (retorna objeto com dias e formato meses+dias)
   const daysSinceBotox = () => {
     if (botoxRecords.length === 0) return null;
     const sorted = [...botoxRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
     const lastBotox = new Date(sorted[0].date);
     const today = new Date();
-    return Math.floor((today - lastBotox) / (1000 * 60 * 60 * 24));
+    const totalDays = Math.floor((today - lastBotox) / (1000 * 60 * 60 * 24));
+    return totalDays;
+  };
+
+  // Formatar dias em meses e dias
+  const formatDaysAsMonths = (days) => {
+    if (days === null) return '';
+    const months = Math.floor(days / 30);
+    const remainingDays = days % 30;
+    if (months === 0) return `${days}d`;
+    if (remainingDays === 0) return `${months}m`;
+    return `${months}m ${remainingDays}d`;
   };
 
   // Guardar Botox
@@ -560,8 +571,9 @@ const MeigeTracker = () => {
 
         {daysSinceBotox() !== null && (
           <div className="mt-4 p-4 bg-slate-800 rounded-lg text-center">
-            <p className="text-slate-400 text-sm">Dias desde última injecção de Botox</p>
-            <p className="text-3xl font-bold text-sky-400 mt-1">{daysSinceBotox()}</p>
+            <p className="text-slate-400 text-sm">Tempo desde última injecção de Botox</p>
+            <p className="text-3xl font-bold text-sky-400 mt-1">{formatDaysAsMonths(daysSinceBotox())}</p>
+            <p className="text-slate-500 text-sm">({daysSinceBotox()} dias)</p>
             {daysSinceBotox() > 90 && (
               <p className="text-amber-400 text-sm mt-2">Mais de 3 meses desde a última injecção</p>
             )}
@@ -1323,8 +1335,9 @@ const MeigeTracker = () => {
             </h3>
 
             <div className="bg-slate-700 rounded-lg p-3 mb-4 text-center">
-              <span className="text-slate-400">Dias desde última injecção: </span>
-              <span className="font-bold text-sky-400">{daysSinceBotox()}</span>
+              <span className="text-slate-400">Tempo desde última injecção: </span>
+              <span className="font-bold text-sky-400">{formatDaysAsMonths(daysSinceBotox())}</span>
+              <span className="text-slate-500 text-sm ml-1">({daysSinceBotox()}d)</span>
             </div>
 
             <SelectField
@@ -1673,8 +1686,9 @@ const MeigeTracker = () => {
 
       {daysSinceBotox() !== null && (
         <div className="bg-slate-800 rounded-xl p-6 mb-6 text-center">
-          <p className="text-slate-400 mb-2">Dias desde a última injecção</p>
-          <p className="text-5xl font-bold text-sky-400">{daysSinceBotox()}</p>
+          <p className="text-slate-400 mb-2">Tempo desde a última injecção</p>
+          <p className="text-5xl font-bold text-sky-400">{formatDaysAsMonths(daysSinceBotox())}</p>
+          <p className="text-slate-500 text-sm">({daysSinceBotox()} dias)</p>
           {daysSinceBotox() > 90 && (
             <p className="mt-3 text-amber-400">Mais de 3 meses desde a última injecção</p>
           )}
@@ -2122,7 +2136,7 @@ const MeigeTracker = () => {
             </h1>
             {daysSinceBotox() !== null && (
               <div className="text-sm bg-slate-700 text-sky-400 px-3 py-1 rounded-full">
-                BTX: {daysSinceBotox()} dias
+                BTX: {formatDaysAsMonths(daysSinceBotox())}
               </div>
             )}
           </div>
