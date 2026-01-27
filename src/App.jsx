@@ -2215,7 +2215,6 @@ const MeigeTracker = () => {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
         <div className="bg-slate-800 rounded-2xl p-8 w-full max-w-sm text-center">
-          <div className="text-5xl mb-4">💊</div>
           <h1 className="text-2xl font-bold text-slate-100 mb-2">Meige Tracker</h1>
           <p className="text-slate-400 text-sm mb-6">Introduza a password para aceder</p>
 
@@ -2257,6 +2256,9 @@ const MeigeTracker = () => {
           >
             Entrar
           </button>
+
+          <p className="text-slate-500 text-sm mt-6">Feito com ❤️ pela tua família</p>
+          <p className="text-slate-600 text-xs mt-1">Estamos sempre contigo, mãe!</p>
         </div>
       </div>
     );
