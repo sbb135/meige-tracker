@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { supabase } from './supabase';
 
-// Password from environment variable (set in Vercel dashboard)
-const APP_PASSWORD = import.meta.env.VITE_APP_PASSWORD || '';
+// Access key from environment variable (set in Vercel dashboard)
+const APP_PASSWORD = import.meta.env.VITE_APP_KEY || '';
 
 const MeigeTracker = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
