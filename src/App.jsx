@@ -242,10 +242,18 @@ const MeigeTracker = () => {
           })));
         }
 
-        // Load consultas
-        const { data: consultasData } = await supabase.from('consultas').select('*');
+        // Load consultas (appointments table)
+        const { data: consultasData } = await supabase.from('appointments').select('*');
         if (consultasData) {
-          setConsultas(consultasData.map(c => ({ ...c.data, id: c.id })));
+          setConsultas(consultasData.map(c => ({
+            id: c.id,
+            date: c.appointment_date,
+            tipo: c.specialty,
+            medico: c.doctor,
+            clinica: c.clinic,
+            notas: c.notes,
+            proximaConsulta: c.next_appointment_date || ''
+          })));
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -373,15 +381,25 @@ const MeigeTracker = () => {
   // Guardar consulta
   const saveConsulta = async () => {
     try {
-      const { data } = await supabase.from('consultas').insert({
-        date: newConsulta.date,
-        data: newConsulta
+      const { data, error } = await supabase.from('appointments').insert({
+        appointment_date: newConsulta.date,
+        specialty: newConsulta.tipo,
+        doctor: newConsulta.medico,
+        clinic: newConsulta.clinica,
+        notes: newConsulta.notas,
+        next_appointment_date: newConsulta.proximaConsulta || null
       }).select();
+      if (error) {
+        alert('❌ Erro ao guardar consulta: ' + error.message);
+        return;
+      }
       if (data && data[0]) {
         setConsultas(prev => [...prev, { ...newConsulta, id: data[0].id }]);
+        alert('✅ Consulta guardada no Supabase!');
       }
     } catch (error) {
       console.error('Error saving consulta:', error);
+      alert('❌ Erro ao guardar consulta');
     }
     setNewConsulta({
       date: new Date().toISOString().split('T')[0],
@@ -1545,7 +1563,15 @@ const MeigeTracker = () => {
             <div key={c.id} className="bg-slate-700 rounded-lg p-4 mb-3">
               <div className="flex justify-between items-start mb-2">
                 <div><span className="text-slate-200 font-medium">{c.tipo}</span><span className="text-slate-400 text-sm ml-2">{formatDatePT(c.date)}</span></div>
-                <button onClick={() => setConsultas(consultas.filter(x => x.id !== c.id))} className="text-red-400 text-sm">Remover</button>
+                <button onClick={async () => {
+                  const { error } = await supabase.from('appointments').delete().eq('id', c.id);
+                  if (error) {
+                    alert('❌ Erro ao eliminar: ' + error.message);
+                  } else {
+                    setConsultas(consultas.filter(x => x.id !== c.id));
+                    alert('✅ Consulta eliminada do Supabase!');
+                  }
+                }} className="text-red-400 text-sm">Remover</button>
               </div>
               {c.medico && <p className="text-sm text-slate-400">Médico: {c.medico}</p>}
               {c.clinica && <p className="text-sm text-slate-400">Local: {c.clinica}</p>}

@@ -84,6 +84,7 @@ create table if not exists appointments (
   specialty text,
   clinic text,
   notes text,
+  next_appointment_date date,
   created_at timestamp with time zone default now()
 );
 
