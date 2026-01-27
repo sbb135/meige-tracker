@@ -1274,13 +1274,31 @@ const MeigeTracker = () => {
           />
         </section>
 
-        {/* GUARDAR */}
-        <button
-          onClick={saveEntry}
-          className="w-full py-4 bg-sky-600 text-white font-semibold rounded-xl hover:bg-sky-500 transition-all"
-        >
-          Guardar registo
-        </button>
+        {/* GUARDAR E ELIMINAR */}
+        <div className="flex gap-3">
+          <button
+            onClick={saveEntry}
+            className="flex-1 py-4 bg-sky-600 text-white font-semibold rounded-xl hover:bg-sky-500 transition-all"
+          >
+            Guardar registo
+          </button>
+          {entries[selectedDate] && (
+            <button
+              onClick={async () => {
+                if (confirm('Tem a certeza que quer eliminar este registo?')) {
+                  await supabase.from('daily_entries').delete().eq('entry_date', selectedDate);
+                  const newEntries = { ...entries };
+                  delete newEntries[selectedDate];
+                  setEntries(newEntries);
+                  setCurrentView('calendar');
+                }
+              }}
+              className="px-6 py-4 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-500 transition-all"
+            >
+              Eliminar
+            </button>
+          )}
+        </div>
       </div>
     );
   };
