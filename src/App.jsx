@@ -2,7 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { supabase } from './supabase';
 
+// Password to access the app (change this to your desired password)
+const APP_PASSWORD = 'meige2026';
+
 const MeigeTracker = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
   const [currentView, setCurrentView] = useState('calendar');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -185,6 +191,14 @@ const MeigeTracker = () => {
   });
 
   const [dayEntry, setDayEntry] = useState(getDefaultDayEntry());
+
+  // Check if already authenticated from previous session
+  useEffect(() => {
+    const auth = localStorage.getItem('meige_auth');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   // Load all data from Supabase on startup
   useEffect(() => {
@@ -2195,6 +2209,58 @@ const MeigeTracker = () => {
       </div>
     );
   };
+
+  // Login screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+        <div className="bg-slate-800 rounded-2xl p-8 w-full max-w-sm text-center">
+          <div className="text-5xl mb-4">💊</div>
+          <h1 className="text-2xl font-bold text-slate-100 mb-2">Meige Tracker</h1>
+          <p className="text-slate-400 text-sm mb-6">Introduza a password para aceder</p>
+
+          <input
+            type="password"
+            value={passwordInput}
+            onChange={(e) => {
+              setPasswordInput(e.target.value);
+              setPasswordError(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                if (passwordInput === APP_PASSWORD) {
+                  setIsAuthenticated(true);
+                  localStorage.setItem('meige_auth', 'true');
+                } else {
+                  setPasswordError(true);
+                }
+              }
+            }}
+            placeholder="Password"
+            className={`w-full p-4 rounded-xl bg-slate-700 border ${passwordError ? 'border-red-500' : 'border-slate-600'} text-slate-100 text-center text-lg mb-4 focus:outline-none focus:ring-2 focus:ring-sky-500`}
+          />
+
+          {passwordError && (
+            <p className="text-red-400 text-sm mb-4">Password incorreta</p>
+          )}
+
+          <button
+            onClick={() => {
+              if (passwordInput === APP_PASSWORD) {
+                setIsAuthenticated(true);
+                localStorage.setItem('meige_auth', 'true');
+              } else {
+                setPasswordError(true);
+              }
+            }}
+            className="w-full py-4 bg-sky-600 text-white font-semibold rounded-xl hover:bg-sky-500 transition-all"
+          >
+            Entrar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
