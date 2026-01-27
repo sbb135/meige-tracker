@@ -280,51 +280,16 @@ const MeigeTracker = () => {
   }, []);
 
   // Update dayEntry when selectedDate or entries change
-  // For today/future: use current medication config (auto-populate from settings)
-  // For past dates: preserve saved data for historical accuracy
+  // Simple medication tracking: just medication ID, quantity, and taken status
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const isPastEntry = selectedDate < today;
-
     if (entries[selectedDate]) {
-      if (isPastEntry) {
-        // Past entries: keep saved medication data for historical accuracy
-        setDayEntry(entries[selectedDate]);
-      } else {
-        // Today or future: merge current medication config with any saved tracking data
-        const savedEntry = entries[selectedDate];
-        const defaultMeds = {};
-        medications.forEach(med => {
-          defaultMeds[med.id] = {};
-          Object.entries(med.times).forEach(([time, config]) => {
-            // Keep saved taken status if it exists, otherwise default to true
-            const savedTimeData = savedEntry.medicationsTaken?.[med.id]?.[time];
-            defaultMeds[med.id][time] = {
-              qty: config.qty,
-              hour: config.hour,
-              timing: config.timing || 'depois',
-              taken: savedTimeData?.taken !== undefined ? savedTimeData.taken : true
-            };
-          });
-        });
-        setDayEntry({
-          ...savedEntry,
-          medicationsTaken: defaultMeds
-        });
-      }
+      // Load saved entry
+      setDayEntry(entries[selectedDate]);
     } else {
-      // No entry yet: use current medication config
+      // New entry: initialize with empty medications (user fills in what they took)
       const defaultMeds = {};
       medications.forEach(med => {
-        defaultMeds[med.id] = {};
-        Object.entries(med.times).forEach(([time, config]) => {
-          defaultMeds[med.id][time] = {
-            qty: config.qty,
-            hour: config.hour,
-            timing: config.timing || 'depois',
-            taken: true
-          };
-        });
+        defaultMeds[med.id] = { qty: 0, taken: true };
       });
       setDayEntry({
         ...getDefaultDayEntry(),
@@ -1101,147 +1066,49 @@ const MeigeTracker = () => {
 
           {medications.map(med => (
             <div key={med.id} className="bg-slate-700 rounded-lg p-4 mb-3">
-              <div className="mb-3">
-                <span className="font-medium text-slate-200">{med.name}</span>
-                {med.dosePerPill && (
-                  <span className="text-sm text-slate-400 ml-2">
-                    ({med.dosePerPill} {med.unit} por {med.unit === 'gotas' ? 'gota' : 'comprimido'})
-                  </span>
-                )}
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <span className="font-medium text-slate-200">{med.name}</span>
+                  {med.dosePerPill && (
+                    <span className="text-sm text-slate-400 ml-2">
+                      ({med.dosePerPill} {med.unit} por {med.unit === 'gotas' ? 'gota' : 'comprimido'})
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    const newMeds = { ...dayEntry.medicationsTaken };
+                    if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true };
+                    newMeds[med.id].taken = !newMeds[med.id].taken;
+                    setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${dayEntry.medicationsTaken?.[med.id]?.taken !== false
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-500 text-slate-300'
+                    }`}
+                >
+                  {dayEntry.medicationsTaken?.[med.id]?.taken !== false ? 'Tomou ✓' : 'Não tomou'}
+                </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {Object.entries(med.times).map(([time, config]) => {
-                  const periodLabels = {
-                    pequeno_almoco: 'Manhã',
-                    manha: 'Manhã',
-                    almoco: 'Almoço',
-                    lanche: 'Tarde',
-                    tarde: 'Tarde',
-                    jantar: 'Noite',
-                    deitar: 'Noite',
-                    noite: 'Noite'
-                  };
-                  const periodLabel = periodLabels[time] || time;
-                  const currentHour = dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour;
-                  const currentTiming = dayEntry.medicationsTaken?.[med.id]?.[time]?.timing ?? config.timing ?? 'depois';
-
-                  return (
-                    <div key={time} className="bg-slate-600 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-slate-200">{periodLabel}</span>
-                        <button
-                          onClick={() => {
-                            const newMeds = { ...dayEntry.medicationsTaken };
-                            if (!newMeds[med.id]) newMeds[med.id] = {};
-                            if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: currentTiming };
-                            newMeds[med.id][time].taken = !newMeds[med.id][time].taken;
-                            setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                          }}
-                          className={`px-3 py-1 rounded text-sm ${dayEntry.medicationsTaken?.[med.id]?.[time]?.taken !== false
-                            ? 'bg-sky-600 text-white'
-                            : 'bg-slate-500 text-slate-300'
-                            }`}
-                        >
-                          {dayEntry.medicationsTaken?.[med.id]?.[time]?.taken !== false ? 'Tomou' : 'Não tomou'}
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex-1">
-                          <label className="block text-xs text-slate-400 mb-1">Hora</label>
-                          <div className="flex gap-1">
-                            <select
-                              value={(dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour)?.split(':')[0] || '08'}
-                              onChange={(e) => {
-                                const newMeds = { ...dayEntry.medicationsTaken };
-                                if (!newMeds[med.id]) newMeds[med.id] = {};
-                                const currentHourVal = dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour;
-                                const mins = currentHourVal?.split(':')[1] || '00';
-                                if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: currentTiming };
-                                newMeds[med.id][time].hour = `${e.target.value}:${mins}`;
-                                setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                              }}
-                              className="flex-1 p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
-                            >
-                              {Array.from({ length: 24 }, (_, i) => (
-                                <option key={i} value={String(i).padStart(2, '0')}>{i}h</option>
-                              ))}
-                            </select>
-                            <select
-                              value={(dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour)?.split(':')[1] || '00'}
-                              onChange={(e) => {
-                                const newMeds = { ...dayEntry.medicationsTaken };
-                                if (!newMeds[med.id]) newMeds[med.id] = {};
-                                const currentHourVal = dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour;
-                                const hours = currentHourVal?.split(':')[0] || '08';
-                                if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: currentTiming };
-                                newMeds[med.id][time].hour = `${hours}:${e.target.value}`;
-                                setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                              }}
-                              className="w-16 p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
-                            >
-                              {['00', '15', '30', '45'].map(m => (
-                                <option key={m} value={m}>{m}m</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-                        <div className="w-20">
-                          <label className="block text-xs text-slate-400 mb-1">Qtd.</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="20"
-                            step="0.5"
-                            value={dayEntry.medicationsTaken?.[med.id]?.[time]?.qty ?? config.qty}
-                            onChange={(e) => {
-                              const newMeds = { ...dayEntry.medicationsTaken };
-                              if (!newMeds[med.id]) newMeds[med.id] = {};
-                              if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: currentTiming };
-                              newMeds[med.id][time].qty = parseFloat(e.target.value) || 0;
-                              setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                            }}
-                            className="w-full p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm text-center"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-slate-400 mb-1">Refeição</label>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              const newMeds = { ...dayEntry.medicationsTaken };
-                              if (!newMeds[med.id]) newMeds[med.id] = {};
-                              if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: 'antes' };
-                              else newMeds[med.id][time].timing = 'antes';
-                              setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                            }}
-                            className={`flex-1 px-2 py-1 rounded text-xs ${currentTiming === 'antes'
-                              ? 'bg-sky-600 text-white'
-                              : 'bg-slate-700 text-slate-300 hover:bg-slate-500'
-                              }`}
-                          >
-                            Antes
-                          </button>
-                          <button
-                            onClick={() => {
-                              const newMeds = { ...dayEntry.medicationsTaken };
-                              if (!newMeds[med.id]) newMeds[med.id] = {};
-                              if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: 'depois' };
-                              else newMeds[med.id][time].timing = 'depois';
-                              setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                            }}
-                            className={`flex-1 px-2 py-1 rounded text-xs ${currentTiming === 'depois'
-                              ? 'bg-sky-600 text-white'
-                              : 'bg-slate-700 text-slate-300 hover:bg-slate-500'
-                              }`}
-                          >
-                            Depois
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="mt-3 flex items-center gap-3">
+                <label className="text-sm text-slate-400">Total hoje:</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="50"
+                  step="0.5"
+                  value={dayEntry.medicationsTaken?.[med.id]?.qty ?? 0}
+                  onChange={(e) => {
+                    const newMeds = { ...dayEntry.medicationsTaken };
+                    if (!newMeds[med.id]) newMeds[med.id] = { qty: 0, taken: true };
+                    newMeds[med.id].qty = parseFloat(e.target.value) || 0;
+                    setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                  }}
+                  className="w-20 p-2 rounded-lg bg-slate-600 border border-slate-500 text-slate-100 text-center"
+                />
+                <span className="text-sm text-slate-400">
+                  {med.unit === 'gotas' ? 'gotas' : 'comprimidos'}
+                </span>
               </div>
             </div>
           ))}
