@@ -2077,17 +2077,18 @@ const MeigeTracker = () => {
             {timeSeriesData.some(d => d.totalMedPills > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
                 <h3 className="font-semibold text-slate-100 mb-2">Correlação Medicação vs Sintomas</h3>
-                <p className="text-sm text-slate-400 mb-4">Relação entre dose total diária de medicação e severidade média dos sintomas.</p>
+                <p className="text-sm text-slate-400 mb-4">Relação entre dose total diária e cada sintoma individual.</p>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={timeSeriesData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                       <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="symptoms" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Sintomas', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                      <YAxis yAxisId="symptoms" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Sintomas (0-10)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
                       <YAxis yAxisId="meds" orientation="right" domain={[0, 20]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Comprimidos', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend />
-                      <Line yAxisId="symptoms" type="monotone" dataKey="avgSymptoms" name="Média Sintomas" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="symptoms" type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="symptoms" type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
                       <Line yAxisId="meds" type="monotone" dataKey="totalMedPills" name="Total Medicação" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
                     </LineChart>
                   </ResponsiveContainer>
