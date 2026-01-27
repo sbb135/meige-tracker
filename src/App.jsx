@@ -656,21 +656,61 @@ const MeigeTracker = () => {
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm text-slate-400 mb-1">Hora de deitar</label>
-              <input
-                type="time"
-                value={dayEntry.bedTime}
-                onChange={(e) => setDayEntry({ ...dayEntry, bedTime: e.target.value })}
-                className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 focus:ring-2 focus:ring-sky-500"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={dayEntry.bedTime?.split(':')[0] || '22'}
+                  onChange={(e) => {
+                    const mins = dayEntry.bedTime?.split(':')[1] || '00';
+                    setDayEntry({ ...dayEntry, bedTime: `${e.target.value}:${mins}` });
+                  }}
+                  className="flex-1 p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 focus:ring-2 focus:ring-sky-500"
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={String(i).padStart(2, '0')}>{i}h</option>
+                  ))}
+                </select>
+                <select
+                  value={dayEntry.bedTime?.split(':')[1] || '00'}
+                  onChange={(e) => {
+                    const hours = dayEntry.bedTime?.split(':')[0] || '22';
+                    setDayEntry({ ...dayEntry, bedTime: `${hours}:${e.target.value}` });
+                  }}
+                  className="w-20 p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 focus:ring-2 focus:ring-sky-500"
+                >
+                  {['00', '15', '30', '45'].map(m => (
+                    <option key={m} value={m}>{m}m</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div>
               <label className="block text-sm text-slate-400 mb-1">Hora de acordar</label>
-              <input
-                type="time"
-                value={dayEntry.wakeTime}
-                onChange={(e) => setDayEntry({ ...dayEntry, wakeTime: e.target.value })}
-                className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 focus:ring-2 focus:ring-sky-500"
-              />
+              <div className="flex gap-2">
+                <select
+                  value={dayEntry.wakeTime?.split(':')[0] || '07'}
+                  onChange={(e) => {
+                    const mins = dayEntry.wakeTime?.split(':')[1] || '00';
+                    setDayEntry({ ...dayEntry, wakeTime: `${e.target.value}:${mins}` });
+                  }}
+                  className="flex-1 p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 focus:ring-2 focus:ring-sky-500"
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={String(i).padStart(2, '0')}>{i}h</option>
+                  ))}
+                </select>
+                <select
+                  value={dayEntry.wakeTime?.split(':')[1] || '00'}
+                  onChange={(e) => {
+                    const hours = dayEntry.wakeTime?.split(':')[0] || '07';
+                    setDayEntry({ ...dayEntry, wakeTime: `${hours}:${e.target.value}` });
+                  }}
+                  className="w-20 p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 focus:ring-2 focus:ring-sky-500"
+                >
+                  {['00', '15', '30', '45'].map(m => (
+                    <option key={m} value={m}>{m}m</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -1003,18 +1043,42 @@ const MeigeTracker = () => {
                       <div className="flex items-center gap-2 mb-2">
                         <div className="flex-1">
                           <label className="block text-xs text-slate-400 mb-1">Hora</label>
-                          <input
-                            type="time"
-                            value={dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour}
-                            onChange={(e) => {
-                              const newMeds = { ...dayEntry.medicationsTaken };
-                              if (!newMeds[med.id]) newMeds[med.id] = {};
-                              if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: currentTiming };
-                              newMeds[med.id][time].hour = e.target.value;
-                              setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                            }}
-                            className="w-full p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
-                          />
+                          <div className="flex gap-1">
+                            <select
+                              value={(dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour)?.split(':')[0] || '08'}
+                              onChange={(e) => {
+                                const newMeds = { ...dayEntry.medicationsTaken };
+                                if (!newMeds[med.id]) newMeds[med.id] = {};
+                                const currentHourVal = dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour;
+                                const mins = currentHourVal?.split(':')[1] || '00';
+                                if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: currentTiming };
+                                newMeds[med.id][time].hour = `${e.target.value}:${mins}`;
+                                setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                              }}
+                              className="flex-1 p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
+                            >
+                              {Array.from({ length: 24 }, (_, i) => (
+                                <option key={i} value={String(i).padStart(2, '0')}>{i}h</option>
+                              ))}
+                            </select>
+                            <select
+                              value={(dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour)?.split(':')[1] || '00'}
+                              onChange={(e) => {
+                                const newMeds = { ...dayEntry.medicationsTaken };
+                                if (!newMeds[med.id]) newMeds[med.id] = {};
+                                const currentHourVal = dayEntry.medicationsTaken?.[med.id]?.[time]?.hour ?? config.hour;
+                                const hours = currentHourVal?.split(':')[0] || '08';
+                                if (!newMeds[med.id][time]) newMeds[med.id][time] = { qty: config.qty, hour: config.hour, taken: true, timing: currentTiming };
+                                newMeds[med.id][time].hour = `${hours}:${e.target.value}`;
+                                setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                              }}
+                              className="w-16 p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
+                            >
+                              {['00', '15', '30', '45'].map(m => (
+                                <option key={m} value={m}>{m}m</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
                         <div className="w-20">
                           <label className="block text-xs text-slate-400 mb-1">Qtd.</label>
@@ -1417,17 +1481,35 @@ const MeigeTracker = () => {
                       </div>
                       {isActive && (
                         <div className="flex gap-2">
-                          <div className="flex-1">
-                            <input
-                              type="time"
-                              value={med.times[time].hour}
+                          <div className="flex-1 flex gap-1">
+                            <select
+                              value={med.times[time].hour?.split(':')[0] || '08'}
                               onChange={(e) => {
                                 const newMeds = [...medications];
-                                newMeds[idx].times[time].hour = e.target.value;
+                                const mins = med.times[time].hour?.split(':')[1] || '00';
+                                newMeds[idx].times[time].hour = `${e.target.value}:${mins}`;
                                 setMedications(newMeds);
                               }}
-                              className="w-full p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
-                            />
+                              className="flex-1 p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
+                            >
+                              {Array.from({ length: 24 }, (_, i) => (
+                                <option key={i} value={String(i).padStart(2, '0')}>{i}h</option>
+                              ))}
+                            </select>
+                            <select
+                              value={med.times[time].hour?.split(':')[1] || '00'}
+                              onChange={(e) => {
+                                const newMeds = [...medications];
+                                const hours = med.times[time].hour?.split(':')[0] || '08';
+                                newMeds[idx].times[time].hour = `${hours}:${e.target.value}`;
+                                setMedications(newMeds);
+                              }}
+                              className="w-14 p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
+                            >
+                              {['00', '15', '30', '45'].map(m => (
+                                <option key={m} value={m}>{m}m</option>
+                              ))}
+                            </select>
                           </div>
                           <div className="w-16">
                             <input
