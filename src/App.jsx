@@ -2054,22 +2054,20 @@ const MeigeTracker = () => {
               </div>
             </div>
 
-            {/* Symptom Average Bar Chart */}
+            {/* Daily Symptom Totals - Stacked Bar Chart */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-2">Média de Sintomas por Período do Dia</h3>
-              <p className="text-sm text-slate-400 mb-4">Comparação da severidade média ao longo do dia. Identifica padrões temporais.</p>
+              <h3 className="font-semibold text-slate-100 mb-2">Totais de Sintomas por Dia</h3>
+              <p className="text-sm text-slate-400 mb-4">Total diário de severidade. Barras mais altas indicam dias piores.</p>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={symptomTotals}>
+                  <BarChart data={timeSeriesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 9, angle: -20 }} interval={0} />
-                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Média (0-10)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} formatter={(value) => value.toFixed(1)} />
-                    <Bar dataKey="value" fill="#0ea5e9" radius={[4, 4, 0, 0]}>
-                      {symptomTotals.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
+                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                    <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Total Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                    <Legend />
+                    <Bar dataKey="olhos" name="Olhos" stackId="a" fill="#0ea5e9" />
+                    <Bar dataKey="face" name="Face" stackId="a" fill="#f59e0b" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
