@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { supabase } from './supabase';
 
 // Access key from environment variable (set in Vercel dashboard)
@@ -1125,28 +1125,31 @@ const MeigeTracker = () => {
                     const periodData = dayEntry.medicationsTaken?.[med.id]?.[period.id];
                     const isActive = periodData?.active !== false && periodData !== undefined;
 
+                    const handleToggle = () => {
+                      const newMeds = { ...dayEntry.medicationsTaken };
+                      if (!newMeds[med.id]) newMeds[med.id] = {};
+                      if (!newMeds[med.id][period.id]) {
+                        newMeds[med.id][period.id] = {
+                          active: true,
+                          hour: period.defaultHour,
+                          qty: 1,
+                          timing: 'depois'
+                        };
+                      } else {
+                        newMeds[med.id][period.id].active = !newMeds[med.id][period.id].active;
+                      }
+                      setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
+                    };
+
                     return (
                       <div
                         key={period.id}
-                        className={`rounded-lg p-3 ${isActive ? 'bg-slate-600' : 'bg-slate-800'}`}
+                        onClick={!isActive ? handleToggle : undefined}
+                        className={`rounded-lg p-3 ${isActive ? 'bg-slate-600' : 'bg-slate-800 cursor-pointer hover:bg-slate-700'}`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <button
-                            onClick={() => {
-                              const newMeds = { ...dayEntry.medicationsTaken };
-                              if (!newMeds[med.id]) newMeds[med.id] = {};
-                              if (!newMeds[med.id][period.id]) {
-                                newMeds[med.id][period.id] = {
-                                  active: true,
-                                  hour: period.defaultHour,
-                                  qty: 1,
-                                  timing: 'depois'
-                                };
-                              } else {
-                                newMeds[med.id][period.id].active = !newMeds[med.id][period.id].active;
-                              }
-                              setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                            }}
+                            onClick={(e) => { e.stopPropagation(); handleToggle(); }}
                             className={`text-sm font-medium ${isActive ? 'text-sky-400' : 'text-slate-400'}`}
                           >
                             {period.label}
@@ -1940,6 +1943,21 @@ const MeigeTracker = () => {
       const speechMap = { 'normal': 0, 'alguma_dificuldade': 3, 'muita_dificuldade': 7, 'nao_conseguiu': 10 };
       const eatingMap = { 'normal': 0, 'alguma_dificuldade': 3, 'muita_dificuldade': 7, 'nao_conseguiu': 10 };
 
+      // Calculate total medication pills for the day
+      let totalMedPills = 0;
+      if (entry.medicationsTaken) {
+        Object.values(entry.medicationsTaken).forEach(medData => {
+          if (typeof medData === 'object') {
+            // New structure with periods
+            Object.values(medData).forEach(periodData => {
+              if (periodData?.active && periodData?.qty) {
+                totalMedPills += periodData.qty;
+              }
+            });
+          }
+        });
+      }
+
       return {
         date: `${d}/${m}`,
         fullDate: date,
@@ -1955,6 +1973,8 @@ const MeigeTracker = () => {
         comerTarde: eatingMap[entry.afternoonEating] ?? null,
         choro: entry.cryingEpisodes || 0,
         daysSinceBtx,
+        totalMedPills,
+        avgSymptoms: ((entry.morningEyes || 0) + (entry.morningFace || 0) + (entry.afternoonEyes || 0) + (entry.afternoonFace || 0) + (entry.eveningEyes || 0) + (entry.eveningFace || 0)) / 6,
         sono: entry.bedTime && entry.wakeTime ? (() => {
           const [bedH, bedM] = entry.bedTime.split(':').map(Number);
           const [wakeH, wakeM] = entry.wakeTime.split(':').map(Number);
@@ -1964,6 +1984,16 @@ const MeigeTracker = () => {
         })() : null
       };
     });
+
+    // Calculate symptom totals for bar chart
+    const symptomTotals = [
+      { name: 'Blefarosp. Manhã', value: timeSeriesData.reduce((sum, d) => sum + (d.olhos || 0), 0) / timeSeriesData.length, color: '#0ea5e9' },
+      { name: 'Blefarosp. Tarde', value: timeSeriesData.reduce((sum, d) => sum + (d.olhosTarde || 0), 0) / timeSeriesData.length, color: '#06b6d4' },
+      { name: 'Blefarosp. Noite', value: timeSeriesData.reduce((sum, d) => sum + (d.olhosNoite || 0), 0) / timeSeriesData.length, color: '#0284c7' },
+      { name: 'Distonia Manhã', value: timeSeriesData.reduce((sum, d) => sum + (d.face || 0), 0) / timeSeriesData.length, color: '#f59e0b' },
+      { name: 'Distonia Tarde', value: timeSeriesData.reduce((sum, d) => sum + (d.faceTarde || 0), 0) / timeSeriesData.length, color: '#f97316' },
+      { name: 'Distonia Noite', value: timeSeriesData.reduce((sum, d) => sum + (d.faceNoite || 0), 0) / timeSeriesData.length, color: '#dc2626' },
+    ];
 
     return (
       <div className="max-w-2xl mx-auto">
@@ -2023,6 +2053,49 @@ const MeigeTracker = () => {
                 </ResponsiveContainer>
               </div>
             </div>
+
+            {/* Symptom Average Bar Chart */}
+            <div className="bg-slate-800 rounded-xl p-5 mb-4">
+              <h3 className="font-semibold text-slate-100 mb-2">Média de Sintomas por Período do Dia</h3>
+              <p className="text-sm text-slate-400 mb-4">Comparação da severidade média ao longo do dia. Identifica padrões temporais.</p>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={symptomTotals}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                    <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 9, angle: -20 }} interval={0} />
+                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Média (0-10)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} formatter={(value) => value.toFixed(1)} />
+                    <Bar dataKey="value" fill="#0ea5e9" radius={[4, 4, 0, 0]}>
+                      {symptomTotals.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Medication vs Symptoms Correlation */}
+            {timeSeriesData.some(d => d.totalMedPills > 0) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-2">Correlação Medicação vs Sintomas</h3>
+                <p className="text-sm text-slate-400 mb-4">Relação entre dose total diária de medicação e severidade média dos sintomas.</p>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={timeSeriesData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="symptoms" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Sintomas', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                      <YAxis yAxisId="meds" orientation="right" domain={[0, 20]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Comprimidos', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Legend />
+                      <Line yAxisId="symptoms" type="monotone" dataKey="avgSymptoms" name="Média Sintomas" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="meds" type="monotone" dataKey="totalMedPills" name="Total Medicação" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
 
             {/* Functional Impact: Oromandibular Dystonia */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
