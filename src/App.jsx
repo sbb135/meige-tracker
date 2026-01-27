@@ -47,26 +47,26 @@ const MeigeTracker = () => {
   // Medicamentos
   const [medications, setMedications] = useState([
     {
-      id: 1, name: 'Rivotril', dosePerPill: '0,5', unit: 'mg', times: {
+      id: 1, name: 'Rivotril® (clonazepam)', dosePerPill: '0,5', unit: 'mg', times: {
         pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' },
         lanche: { qty: 1.5, hour: '16:00', timing: 'depois' },
         deitar: { qty: 3, hour: '22:30', timing: 'antes' }
       }
     },
     {
-      id: 2, name: 'Artane', dosePerPill: '2', unit: 'mg', times: {
+      id: 2, name: 'Artane® (trihexifenidil)', dosePerPill: '2', unit: 'mg', times: {
         pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' },
         lanche: { qty: 1, hour: '16:00', timing: 'depois' }
       }
     },
     {
-      id: 3, name: 'Metibasol', dosePerPill: '5', unit: 'mg', times: {
+      id: 3, name: 'Metibasol® (tiamazol)', dosePerPill: '5', unit: 'mg', times: {
         almoco: { qty: 1, hour: '13:00', timing: 'depois' }
       }
     },
     {
-      id: 4, name: 'Gotas antidepressivas', dosePerPill: '', unit: 'gotas', times: {
-        deitar: { qty: 10, hour: '22:00', timing: 'antes' }
+      id: 4, name: 'Medicação para o colesterol', dosePerPill: '', unit: 'mg', times: {
+        deitar: { qty: 1, hour: '22:00', timing: 'antes' }
       }
     },
   ]);
