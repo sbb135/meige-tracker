@@ -1286,11 +1286,16 @@ const MeigeTracker = () => {
             <button
               onClick={async () => {
                 if (confirm('Tem a certeza que quer eliminar este registo?')) {
-                  await supabase.from('daily_entries').delete().eq('entry_date', selectedDate);
-                  const newEntries = { ...entries };
-                  delete newEntries[selectedDate];
-                  setEntries(newEntries);
-                  setCurrentView('calendar');
+                  const { error } = await supabase.from('daily_entries').delete().eq('entry_date', selectedDate);
+                  if (error) {
+                    alert('❌ Erro ao eliminar do Supabase: ' + error.message);
+                  } else {
+                    const newEntries = { ...entries };
+                    delete newEntries[selectedDate];
+                    setEntries(newEntries);
+                    alert('✅ Registo eliminado do Supabase com sucesso!');
+                    setCurrentView('calendar');
+                  }
                 }
               }}
               className="px-6 py-4 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-500 transition-all"
@@ -1707,8 +1712,13 @@ const MeigeTracker = () => {
                   </div>
                   <button
                     onClick={async () => {
-                      await supabase.from('botox_injections').delete().eq('id', record.id);
-                      setBotoxRecords(botoxRecords.filter(b => b.id !== record.id));
+                      const { error } = await supabase.from('botox_injections').delete().eq('id', record.id);
+                      if (error) {
+                        alert('❌ Erro ao eliminar do Supabase: ' + error.message);
+                      } else {
+                        setBotoxRecords(botoxRecords.filter(b => b.id !== record.id));
+                        alert('✅ Registo de Botox eliminado do Supabase!');
+                      }
                     }}
                     className="text-red-400 hover:text-red-300 text-sm"
                   >
