@@ -1118,8 +1118,8 @@ const MeigeTracker = () => {
                       setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                     }}
                     className={`px-3 py-1 rounded text-sm ${dayEntry.medicationsTaken?.[med.id]?.timing === 'antes'
-                        ? 'bg-sky-600 text-white'
-                        : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+                      ? 'bg-sky-600 text-white'
+                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
                       }`}
                   >
                     Antes
@@ -1132,8 +1132,8 @@ const MeigeTracker = () => {
                       setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                     }}
                     className={`px-3 py-1 rounded text-sm ${(dayEntry.medicationsTaken?.[med.id]?.timing ?? 'depois') === 'depois'
-                        ? 'bg-sky-600 text-white'
-                        : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
+                      ? 'bg-sky-600 text-white'
+                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
                       }`}
                   >
                     Depois
@@ -1395,13 +1395,11 @@ const MeigeTracker = () => {
 
   // Configuração de medicamentos
   const renderMedicationSetup = () => {
-    const timeLabels = ['manhã', 'tarde', 'noite'];
-
     return (
       <div className="max-w-xl mx-auto">
         <h2 className="text-xl font-semibold text-slate-100 mb-2">Configurar medicamentos</h2>
         <p className="text-slate-400 text-sm mb-6">
-          Coloque a dose que está na caixa e quantos comprimidos toma em cada altura do dia.
+          Lista de medicamentos. A quantidade tomada regista-se no calendário de cada dia.
         </p>
 
         {medications.map((med, idx) => (
@@ -1455,91 +1453,9 @@ const MeigeTracker = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs text-slate-400 mb-2">Quando toma</label>
-              <div className="grid grid-cols-2 gap-2">
-                {timeLabels.map(time => {
-                  const isActive = med.times[time] !== undefined;
-                  return (
-                    <div
-                      key={time}
-                      className={`rounded-lg p-3 ${isActive ? 'bg-slate-600' : 'bg-slate-700'}`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={isActive}
-                          onChange={(e) => {
-                            const newMeds = [...medications];
-                            if (e.target.checked) {
-                              newMeds[idx].times[time] = { qty: 1, hour: '08:00' };
-                            } else {
-                              delete newMeds[idx].times[time];
-                            }
-                            setMedications(newMeds);
-                          }}
-                          className="w-4 h-4 rounded bg-slate-600 border-slate-500 text-sky-500"
-                        />
-                        <span className="text-sm capitalize text-slate-200">{time}</span>
-                      </div>
-                      {isActive && (
-                        <div className="flex gap-2">
-                          <div className="flex-1 flex gap-1">
-                            <select
-                              value={med.times[time].hour?.split(':')[0] || '08'}
-                              onChange={(e) => {
-                                const newMeds = [...medications];
-                                const mins = med.times[time].hour?.split(':')[1] || '00';
-                                newMeds[idx].times[time].hour = `${e.target.value}:${mins}`;
-                                setMedications(newMeds);
-                              }}
-                              className="flex-1 p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
-                            >
-                              {Array.from({ length: 24 }, (_, i) => (
-                                <option key={i} value={String(i).padStart(2, '0')}>{i}h</option>
-                              ))}
-                            </select>
-                            <select
-                              value={med.times[time].hour?.split(':')[1] || '00'}
-                              onChange={(e) => {
-                                const newMeds = [...medications];
-                                const hours = med.times[time].hour?.split(':')[0] || '08';
-                                newMeds[idx].times[time].hour = `${hours}:${e.target.value}`;
-                                setMedications(newMeds);
-                              }}
-                              className="w-14 p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
-                            >
-                              {['00', '15', '30', '45'].map(m => (
-                                <option key={m} value={m}>{m}m</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="w-16">
-                            <input
-                              type="number"
-                              min="0"
-                              max="20"
-                              step="0.5"
-                              value={med.times[time].qty}
-                              onChange={(e) => {
-                                const newMeds = [...medications];
-                                newMeds[idx].times[time].qty = parseFloat(e.target.value) || 0;
-                                setMedications(newMeds);
-                              }}
-                              className="w-full p-2 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm text-center"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
             <button
               onClick={() => setMedications(medications.filter((_, i) => i !== idx))}
-              className="mt-4 text-sm text-red-400 hover:text-red-300"
+              className="text-sm text-red-400 hover:text-red-300"
             >
               Remover medicamento
             </button>
