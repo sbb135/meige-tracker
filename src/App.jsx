@@ -280,10 +280,40 @@ const MeigeTracker = () => {
   }, []);
 
   // Update dayEntry when selectedDate or entries change
+  // For today/future: use current medication config (auto-populate from settings)
+  // For past dates: preserve saved data for historical accuracy
   useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const isPastEntry = selectedDate < today;
+
     if (entries[selectedDate]) {
-      setDayEntry(entries[selectedDate]);
+      if (isPastEntry) {
+        // Past entries: keep saved medication data for historical accuracy
+        setDayEntry(entries[selectedDate]);
+      } else {
+        // Today or future: merge current medication config with any saved tracking data
+        const savedEntry = entries[selectedDate];
+        const defaultMeds = {};
+        medications.forEach(med => {
+          defaultMeds[med.id] = {};
+          Object.entries(med.times).forEach(([time, config]) => {
+            // Keep saved taken status if it exists, otherwise default to true
+            const savedTimeData = savedEntry.medicationsTaken?.[med.id]?.[time];
+            defaultMeds[med.id][time] = {
+              qty: config.qty,
+              hour: config.hour,
+              timing: config.timing || 'depois',
+              taken: savedTimeData?.taken !== undefined ? savedTimeData.taken : true
+            };
+          });
+        });
+        setDayEntry({
+          ...savedEntry,
+          medicationsTaken: defaultMeds
+        });
+      }
     } else {
+      // No entry yet: use current medication config
       const defaultMeds = {};
       medications.forEach(med => {
         defaultMeds[med.id] = {};
@@ -291,6 +321,7 @@ const MeigeTracker = () => {
           defaultMeds[med.id][time] = {
             qty: config.qty,
             hour: config.hour,
+            timing: config.timing || 'depois',
             taken: true
           };
         });
