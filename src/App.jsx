@@ -11,6 +11,7 @@ const MeigeTracker = () => {
   const [showMedicationSetup, setShowMedicationSetup] = useState(false);
   const [showBotoxForm, setShowBotoxForm] = useState(false);
   const [showConsultaForm, setShowConsultaForm] = useState(false);
+  const [editingBotoxId, setEditingBotoxId] = useState(null);
 
   // Horários de refeição
   const mealTimes = [
@@ -26,6 +27,7 @@ const MeigeTracker = () => {
 
   // Consultas
   const [consultas, setConsultas] = useState([]);
+  const [editingConsultaId, setEditingConsultaId] = useState(null);
   const [newConsulta, setNewConsulta] = useState({
     date: new Date().toISOString().split('T')[0],
     tipo: 'Neurologista',
@@ -361,22 +363,48 @@ const MeigeTracker = () => {
     return `${months}m ${remainingDays}d`;
   };
 
-  // Guardar Botox
+  // Guardar ou atualizar Botox
   const saveBotoxRecord = async () => {
     try {
-      const { data } = await supabase.from('botox_injections').insert({
-        injection_date: newBotox.date,
-        total_dose: newBotox.totalDose,
-        sites: newBotox.sites,
-        doctor: newBotox.doctor,
-        clinic: newBotox.clinic,
-        notes: newBotox.notes
-      }).select();
-      if (data && data[0]) {
-        setBotoxRecords(prev => [...prev, { ...newBotox, id: data[0].id }]);
+      if (editingBotoxId) {
+        // Update existing
+        const { error } = await supabase.from('botox_injections').update({
+          injection_date: newBotox.date,
+          total_dose: newBotox.totalDose,
+          sites: newBotox.sites,
+          doctor: newBotox.doctor,
+          clinic: newBotox.clinic,
+          notes: newBotox.notes
+        }).eq('id', editingBotoxId);
+        if (error) {
+          alert('❌ Erro ao atualizar: ' + error.message);
+          return;
+        }
+        setBotoxRecords(prev => prev.map(b => b.id === editingBotoxId ? { ...newBotox, id: editingBotoxId } : b));
+        alert('✅ Registo de Botox atualizado!');
+        setEditingBotoxId(null);
+      } else {
+        // Insert new
+        const { data, error } = await supabase.from('botox_injections').insert({
+          injection_date: newBotox.date,
+          total_dose: newBotox.totalDose,
+          sites: newBotox.sites,
+          doctor: newBotox.doctor,
+          clinic: newBotox.clinic,
+          notes: newBotox.notes
+        }).select();
+        if (error) {
+          alert('❌ Erro ao guardar: ' + error.message);
+          return;
+        }
+        if (data && data[0]) {
+          setBotoxRecords(prev => [...prev, { ...newBotox, id: data[0].id }]);
+          alert('✅ Registo de Botox guardado!');
+        }
       }
     } catch (error) {
       console.error('Error saving botox record:', error);
+      alert('❌ Erro ao guardar');
     }
     setNewBotox({
       date: new Date().toISOString().split('T')[0],
@@ -389,24 +417,44 @@ const MeigeTracker = () => {
     setShowBotoxForm(false);
   };
 
-  // Guardar consulta
+  // Guardar ou atualizar consulta
   const saveConsulta = async () => {
     try {
-      const { data, error } = await supabase.from('appointments').insert({
-        appointment_date: newConsulta.date,
-        specialty: newConsulta.tipo,
-        doctor: newConsulta.medico,
-        clinic: newConsulta.clinica,
-        notes: newConsulta.notas,
-        next_appointment_date: newConsulta.proximaConsulta || null
-      }).select();
-      if (error) {
-        alert('❌ Erro ao guardar consulta: ' + error.message);
-        return;
-      }
-      if (data && data[0]) {
-        setConsultas(prev => [...prev, { ...newConsulta, id: data[0].id }]);
-        alert('✅ Consulta guardada no Supabase!');
+      if (editingConsultaId) {
+        // Update existing
+        const { error } = await supabase.from('appointments').update({
+          appointment_date: newConsulta.date,
+          specialty: newConsulta.tipo,
+          doctor: newConsulta.medico,
+          clinic: newConsulta.clinica,
+          notes: newConsulta.notas,
+          next_appointment_date: newConsulta.proximaConsulta || null
+        }).eq('id', editingConsultaId);
+        if (error) {
+          alert('❌ Erro ao atualizar consulta: ' + error.message);
+          return;
+        }
+        setConsultas(prev => prev.map(c => c.id === editingConsultaId ? { ...newConsulta, id: editingConsultaId } : c));
+        alert('✅ Consulta atualizada!');
+        setEditingConsultaId(null);
+      } else {
+        // Insert new
+        const { data, error } = await supabase.from('appointments').insert({
+          appointment_date: newConsulta.date,
+          specialty: newConsulta.tipo,
+          doctor: newConsulta.medico,
+          clinic: newConsulta.clinica,
+          notes: newConsulta.notas,
+          next_appointment_date: newConsulta.proximaConsulta || null
+        }).select();
+        if (error) {
+          alert('❌ Erro ao guardar consulta: ' + error.message);
+          return;
+        }
+        if (data && data[0]) {
+          setConsultas(prev => [...prev, { ...newConsulta, id: data[0].id }]);
+          alert('✅ Consulta guardada!');
+        }
       }
     } catch (error) {
       console.error('Error saving consulta:', error);
@@ -1658,15 +1706,30 @@ const MeigeTracker = () => {
             <div key={c.id} className="bg-slate-700 rounded-lg p-4 mb-3">
               <div className="flex justify-between items-start mb-2">
                 <div><span className="text-slate-200 font-medium">{c.tipo}</span><span className="text-slate-400 text-sm ml-2">{formatDatePT(c.date)}</span></div>
-                <button onClick={async () => {
-                  const { error } = await supabase.from('appointments').delete().eq('id', c.id);
-                  if (error) {
-                    alert('❌ Erro ao eliminar: ' + error.message);
-                  } else {
-                    setConsultas(consultas.filter(x => x.id !== c.id));
-                    alert('✅ Consulta eliminada do Supabase!');
-                  }
-                }} className="text-red-400 text-sm">Remover</button>
+                <div className="flex gap-2">
+                  <button onClick={() => {
+                    setNewConsulta({
+                      date: c.date,
+                      tipo: c.tipo,
+                      medico: c.medico || '',
+                      clinica: c.clinica || '',
+                      motivo: c.motivo || '',
+                      notas: c.notas || '',
+                      proximaConsulta: c.proximaConsulta || ''
+                    });
+                    setEditingConsultaId(c.id);
+                    setShowConsultaForm(true);
+                  }} className="text-sky-400 text-sm">Editar</button>
+                  <button onClick={async () => {
+                    const { error } = await supabase.from('appointments').delete().eq('id', c.id);
+                    if (error) {
+                      alert('❌ Erro ao eliminar: ' + error.message);
+                    } else {
+                      setConsultas(consultas.filter(x => x.id !== c.id));
+                      alert('✅ Consulta eliminada!');
+                    }
+                  }} className="text-red-400 text-sm">Remover</button>
+                </div>
               </div>
               {c.medico && <p className="text-sm text-slate-400">Médico: {c.medico}</p>}
               {c.clinica && <p className="text-sm text-slate-400">Local: {c.clinica}</p>}
@@ -1832,20 +1895,39 @@ const MeigeTracker = () => {
                     <p className="text-slate-100 font-medium">{formatDatePT(record.date)}</p>
                     <p className="text-slate-400 text-sm">Dose total: {record.totalDose}</p>
                   </div>
-                  <button
-                    onClick={async () => {
-                      const { error } = await supabase.from('botox_injections').delete().eq('id', record.id);
-                      if (error) {
-                        alert('❌ Erro ao eliminar do Supabase: ' + error.message);
-                      } else {
-                        setBotoxRecords(botoxRecords.filter(b => b.id !== record.id));
-                        alert('✅ Registo de Botox eliminado do Supabase!');
-                      }
-                    }}
-                    className="text-red-400 hover:text-red-300 text-sm"
-                  >
-                    Remover
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setNewBotox({
+                          date: record.date,
+                          totalDose: record.totalDose || '',
+                          sites: record.sites || {},
+                          doctor: record.doctor || '',
+                          clinic: record.clinic || '',
+                          notes: record.notes || ''
+                        });
+                        setEditingBotoxId(record.id);
+                        setShowBotoxForm(true);
+                      }}
+                      className="text-sky-400 hover:text-sky-300 text-sm"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const { error } = await supabase.from('botox_injections').delete().eq('id', record.id);
+                        if (error) {
+                          alert('❌ Erro ao eliminar: ' + error.message);
+                        } else {
+                          setBotoxRecords(botoxRecords.filter(b => b.id !== record.id));
+                          alert('✅ Registo eliminado!');
+                        }
+                      }}
+                      className="text-red-400 hover:text-red-300 text-sm"
+                    >
+                      Remover
+                    </button>
+                  </div>
                 </div>
                 {Object.keys(record.sites).length > 0 && (
                   <div className="text-sm text-slate-400">
