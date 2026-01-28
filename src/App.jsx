@@ -1185,7 +1185,6 @@ const MeigeTracker = () => {
                     return (
                       <div
                         key={period.id}
-                        onClick={!isActive ? handleToggle : undefined}
                         className={`rounded-lg p-3 ${isActive ? 'bg-slate-600' : 'bg-slate-800 cursor-pointer hover:bg-slate-700'}`}
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -1195,8 +1194,15 @@ const MeigeTracker = () => {
                           >
                             {period.label}
                           </button>
-                          {isActive && (
-                            <span className="text-xs px-2 py-0.5 bg-sky-600 text-white rounded">Tomou</span>
+                          {isActive ? (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleToggle(); }}
+                              className="text-xs px-2 py-0.5 bg-red-600/30 text-red-400 rounded hover:bg-red-600/50"
+                            >
+                              ✕ Remover
+                            </button>
+                          ) : (
+                            <span className="text-xs text-slate-500">Clique para adicionar</span>
                           )}
                         </div>
 
