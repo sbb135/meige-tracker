@@ -1992,25 +1992,6 @@ const MeigeTracker = () => {
           </div>
         )}
 
-        {/* Upcoming Appointments */}
-        {allUpcoming.length > 0 && (
-          <div className="bg-slate-800 rounded-xl p-5 mb-4">
-            <h3 className="text-lg font-semibold text-slate-100 mb-4">Próximas Consultas</h3>
-            {allUpcoming.map((c, idx) => (
-              <div key={c.id || idx} className={`rounded-lg p-3 mb-2 border-l-4 ${getSpecialtyColor(c.tipo)} bg-slate-700`}>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="text-sky-400 font-medium">{formatDatePT(c.proximaConsulta)}</span>
-                    <span className="text-slate-400 mx-2">•</span>
-                    <span className="text-slate-200">{c.tipo}</span>
-                  </div>
-                </div>
-                {c.medico && <p className="text-sm text-slate-400 mt-1">{c.medico} • {c.clinica}</p>}
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* History */}
         {consultas.length > 0 && (
           <div className="bg-slate-800 rounded-xl p-5">
