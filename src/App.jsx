@@ -1837,9 +1837,20 @@ const MeigeTracker = () => {
                         const newDate = document.getElementById(`edit-date-${m.id}`).value;
                         updateDoctorAppointment(m.id, newDate);
                       }}
-                      className="w-full py-2 bg-sky-600 text-white rounded text-sm font-medium hover:bg-sky-500"
+                      className="w-full py-2 bg-sky-600 text-white rounded text-sm font-medium hover:bg-sky-500 mb-2"
                     >
                       Guardar
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`Remover ${m.nome}?`)) {
+                          setMedicos(medicos.filter(doc => doc.id !== m.id));
+                          setEditingDoctorId(null);
+                        }
+                      }}
+                      className="w-full py-2 bg-red-600/20 text-red-400 rounded text-sm font-medium hover:bg-red-600/40"
+                    >
+                      Remover médico
                     </button>
                   </div>
                 ) : (
