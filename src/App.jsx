@@ -736,7 +736,7 @@ const MeigeTracker = () => {
   const ClinicalScale = ({ label, value, onChange, type = 'severity' }) => {
     const scales = {
       severity: ['Nenhum', 'Leve', 'Moderado', 'Severo', 'Incapacitante'],
-      frequency: ['Nenhum', 'Ocasional', 'Intermitente', 'Frequente', 'Contínuo'],
+      frequency: ['Nunca', 'Ocasional', 'Intermitente', 'Frequente', 'Contínuo'],
       function: ['Normal', 'Leve', 'Moderado', 'Severo', 'Incapaz'],
     };
     const labels = scales[type] || scales.severity;
@@ -744,27 +744,21 @@ const MeigeTracker = () => {
 
     return (
       <div className="mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <label className="font-medium text-slate-200 text-sm">{label}</label>
-          <span className="text-sm font-bold text-slate-400">{value}/4</span>
-        </div>
-        <div className="flex gap-1">
+        <label className="block font-medium text-slate-200 text-sm mb-2">{label}</label>
+        <div className="grid grid-cols-5 gap-1">
           {[0, 1, 2, 3, 4].map(v => (
             <button
               key={v}
               onClick={() => onChange(v)}
-              className={`flex-1 py-2 px-1 rounded text-xs font-medium transition-all ${value === v
+              className={`py-2 px-1 rounded text-xs font-medium transition-all ${value === v
                 ? `${colors[v]} text-white`
                 : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
                 }`}
             >
-              {v}
+              <div className="font-bold">{v}</div>
+              <div className="text-[10px] opacity-80">{labels[v]}</div>
             </button>
           ))}
-        </div>
-        <div className="flex justify-between text-xs text-slate-500 mt-1">
-          <span>{labels[0]}</span>
-          <span>{labels[4]}</span>
         </div>
       </div>
     );
@@ -892,51 +886,112 @@ const MeigeTracker = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm text-slate-400 mb-2">Acordou durante a noite quantas vezes?</label>
+            <label className="block text-sm text-slate-400 mb-2">Acordou durante a noite?</label>
             <div className="flex gap-2">
-              {[0, 1, 2, 3, 4, 5].map(n => (
+              {[
+                { value: 0, label: '0' },
+                { value: 1, label: '1' },
+                { value: 2, label: '2+' },
+              ].map(opt => (
                 <button
-                  key={n}
-                  onClick={() => setDayEntry({ ...dayEntry, sleepInterruptions: n })}
-                  className={`w-10 h-10 rounded-lg ${dayEntry.sleepInterruptions === n
+                  key={opt.value}
+                  onClick={() => setDayEntry({ ...dayEntry, sleepInterruptions: opt.value })}
+                  className={`px-4 py-2 rounded-lg ${dayEntry.sleepInterruptions === opt.value
                     ? 'bg-sky-600 text-white'
                     : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                     }`}
                 >
-                  {n === 5 ? '5+' : n}
+                  {opt.label}
                 </button>
               ))}
             </div>
           </div>
 
-          <SelectField
-            label="Qualidade do sono"
-            value={dayEntry.sleepQuality}
-            onChange={(v) => setDayEntry({ ...dayEntry, sleepQuality: v })}
-            options={[
-              { value: 'adormeceu_facil', label: 'Adormeceu fácil' },
-              { value: 'demorou', label: 'Demorou a adormecer' },
-              { value: 'muito_dificil', label: 'Muito difícil adormecer' },
-            ]}
-          />
+          <div className="mb-4">
+            <label className="block text-sm text-slate-400 mb-2">Acordou descansada?</label>
+            <div className="flex gap-2">
+              {[
+                { value: 'sim', label: 'Sim' },
+                { value: 'nao', label: 'Não' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setDayEntry({ ...dayEntry, feltRested: opt.value })}
+                  className={`px-4 py-2 rounded-lg ${dayEntry.feltRested === opt.value
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ESTADO EMOCIONAL */}
+        <section className="bg-slate-800 rounded-xl p-5 mb-4">
+          <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
+            Estado emocional ao acordar
+          </h3>
+          <p className="text-xs text-slate-500 mb-4">Primeiros 30 minutos - relação stress-motor</p>
+
+          <div className="mb-4">
+            <label className="block text-sm text-slate-400 mb-2">Desregulação emocional</label>
+            <div className="flex gap-1">
+              {[
+                { value: 0, label: '0 Nenhuma' },
+                { value: 1, label: '1 Leve' },
+                { value: 2, label: '2 Moderada' },
+                { value: 3, label: '3 Severa' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setDayEntry({ ...dayEntry, emotionalDysregulation: opt.value })}
+                  className={`flex-1 py-2 px-1 rounded text-xs ${(dayEntry.emotionalDysregulation || 0) === opt.value
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm text-slate-400 mb-2">Chorou ao acordar?</label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDayEntry({ ...dayEntry, wakeCrying: false })}
+                className={`px-4 py-2 rounded-lg ${!dayEntry.wakeCrying ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+              >Não</button>
+              <button
+                onClick={() => setDayEntry({ ...dayEntry, wakeCrying: true })}
+                className={`px-4 py-2 rounded-lg ${dayEntry.wakeCrying ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+              >Sim</button>
+            </div>
+          </div>
 
           <SelectField
-            label="Acordou descansada?"
-            value={dayEntry.feltRested}
-            onChange={(v) => setDayEntry({ ...dayEntry, feltRested: v })}
+            label="Tempo até estabilizar"
+            value={dayEntry.wakeStabilizeTime}
+            onChange={(v) => setDayEntry({ ...dayEntry, wakeStabilizeTime: v })}
             options={[
-              { value: 'sim', label: 'Sim, descansada' },
-              { value: 'mais_menos', label: 'Mais ou menos' },
-              { value: 'cansada', label: 'Cansada' },
-              { value: 'exausta', label: 'Muito cansada' },
+              { value: 'imediato', label: 'Imediato' },
+              { value: '15min', label: '15 min' },
+              { value: '30min', label: '30 min' },
+              { value: '1hora', label: '1 hora' },
+              { value: 'manha_toda', label: 'Manhã toda' },
+              { value: 'nao_estabilizou', label: 'Não estabilizou' },
             ]}
           />
         </section>
 
-        {/* AO ACORDAR */}
+        {/* SINTOMAS AO ACORDAR */}
         <section className="bg-slate-800 rounded-xl p-5 mb-4">
           <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
-            Ao acordar (primeiros 30 minutos)
+            Sintomas ao acordar (primeiros 30 min)
           </h3>
 
           <ClinicalScale
@@ -954,14 +1009,14 @@ const MeigeTracker = () => {
           />
 
           <ClinicalScale
-            label="Mandíbula - Severidade"
+            label="Mandíbula"
             value={dayEntry.wakeFace}
             onChange={(v) => setDayEntry({ ...dayEntry, wakeFace: v })}
             type="severity"
           />
 
           <ClinicalScale
-            label="Pescoço - Severidade"
+            label="Pescoço"
             value={dayEntry.wakeNeck || 0}
             onChange={(v) => setDayEntry({ ...dayEntry, wakeNeck: v })}
             type="severity"
@@ -979,38 +1034,6 @@ const MeigeTracker = () => {
             value={dayEntry.wakeEating || 0}
             onChange={(v) => setDayEntry({ ...dayEntry, wakeEating: v })}
             type="function"
-          />
-
-          <SelectField
-            label="Estado emocional ao acordar"
-            value={dayEntry.wakeEmotion}
-            onChange={(v) => setDayEntry({ ...dayEntry, wakeEmotion: v })}
-            options={[
-              { value: 'normal', label: 'Normal' },
-              { value: 'alguma_tristeza', label: 'Alguma tristeza' },
-              { value: 'choro_facil', label: 'Choro fácil' },
-              { value: 'muita_ansiedade', label: 'Muita ansiedade' },
-            ]}
-          />
-
-          <CheckboxField
-            label="Chorou ao acordar"
-            checked={dayEntry.wakeCrying}
-            onChange={(v) => setDayEntry({ ...dayEntry, wakeCrying: v })}
-          />
-
-          <SelectField
-            label="Quanto tempo até estabilizar?"
-            value={dayEntry.wakeStabilizeTime}
-            onChange={(v) => setDayEntry({ ...dayEntry, wakeStabilizeTime: v })}
-            options={[
-              { value: 'imediato', label: 'Imediato' },
-              { value: '15min', label: '15 minutos' },
-              { value: '30min', label: '30 minutos' },
-              { value: '1hora', label: '1 hora' },
-              { value: 'manha_toda', label: 'Manhã toda' },
-              { value: 'nao_estabilizou', label: 'Não estabilizou' },
-            ]}
           />
         </section>
 
