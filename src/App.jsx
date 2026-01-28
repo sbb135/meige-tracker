@@ -1721,18 +1721,23 @@ const MeigeTracker = () => {
         <div
           key={day}
           onClick={() => handleCalendarCellClick(dateStr, appointments)}
-          className={`relative h-12 rounded flex flex-col items-center justify-center text-sm transition-all
-            ${bgColor}
+          className={`relative h-16 rounded-lg flex flex-col items-center justify-center text-sm transition-all
+            ${hasAppointment ? bgColor : 'bg-slate-700'}
             ${isToday ? 'ring-2 ring-sky-300' : ''}
-            ${hasAppointment ? 'cursor-pointer hover:opacity-80 ring-1 ring-white/30' : 'hover:bg-slate-600'}`}
+            ${hasAppointment ? 'cursor-pointer hover:opacity-80 shadow-lg' : 'hover:bg-slate-600'}`}
           title={appointments.map(a => `${a.tipo}: ${a.nome}`).join('\n')}
         >
-          <span className={`${isToday ? 'text-sky-300 font-bold' : hasAppointment ? 'text-white font-medium' : 'text-slate-300'}`}>
+          <span className={`text-base ${isToday ? 'text-sky-300 font-bold' : hasAppointment ? 'text-white font-bold' : 'text-slate-300'}`}>
             {day}
           </span>
           {hasAppointment && (
-            <span className="text-[10px] text-white/80 truncate max-w-full px-1">
-              {appointments[0].tipo.substring(0, 4)}
+            <span className={`mt-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${appointments[0].tipo === 'Neurologista' ? 'bg-purple-500 text-white' :
+                appointments[0].tipo === 'Psiquiatra' ? 'bg-indigo-500 text-white' :
+                  appointments[0].tipo.includes('Endo') ? 'bg-teal-500 text-white' :
+                    appointments[0].tipo.includes('Família') ? 'bg-green-500 text-white' :
+                      'bg-sky-500 text-white'
+              }`}>
+              {appointments[0].tipo.substring(0, 5)}
             </span>
           )}
         </div>
