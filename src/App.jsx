@@ -998,28 +998,16 @@ const MeigeTracker = () => {
             onChange={(v) => setDayEntry({ ...dayEntry, morningNeck: v })}
           />
 
-          <SelectField
+          <SymptomSlider
             label="Fala"
             value={dayEntry.morningSpeech}
             onChange={(v) => setDayEntry({ ...dayEntry, morningSpeech: v })}
-            options={[
-              { value: 'normal', label: 'Normal' },
-              { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
-              { value: 'muita_dificuldade', label: 'Muita dificuldade' },
-              { value: 'nao_conseguiu', label: 'Não conseguiu falar' },
-            ]}
           />
 
-          <SelectField
-            label="Comer e mastigar"
+          <SymptomSlider
+            label="Comer/Mastigar"
             value={dayEntry.morningEating}
             onChange={(v) => setDayEntry({ ...dayEntry, morningEating: v })}
-            options={[
-              { value: 'normal', label: 'Normal' },
-              { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
-              { value: 'muita_dificuldade', label: 'Muita dificuldade' },
-              { value: 'nao_conseguiu', label: 'Não conseguiu comer' },
-            ]}
           />
         </section>
 
@@ -1047,28 +1035,16 @@ const MeigeTracker = () => {
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonNeck: v })}
           />
 
-          <SelectField
+          <SymptomSlider
             label="Fala"
             value={dayEntry.afternoonSpeech}
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonSpeech: v })}
-            options={[
-              { value: 'normal', label: 'Normal' },
-              { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
-              { value: 'muita_dificuldade', label: 'Muita dificuldade' },
-              { value: 'nao_conseguiu', label: 'Não conseguiu falar' },
-            ]}
           />
 
-          <SelectField
-            label="Comer e mastigar"
+          <SymptomSlider
+            label="Comer/Mastigar"
             value={dayEntry.afternoonEating}
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonEating: v })}
-            options={[
-              { value: 'normal', label: 'Normal' },
-              { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
-              { value: 'muita_dificuldade', label: 'Muita dificuldade' },
-              { value: 'nao_conseguiu', label: 'Não conseguiu comer' },
-            ]}
           />
         </section>
 
@@ -1096,28 +1072,16 @@ const MeigeTracker = () => {
             onChange={(v) => setDayEntry({ ...dayEntry, eveningNeck: v })}
           />
 
-          <SelectField
+          <SymptomSlider
             label="Fala"
             value={dayEntry.eveningSpeech}
             onChange={(v) => setDayEntry({ ...dayEntry, eveningSpeech: v })}
-            options={[
-              { value: 'normal', label: 'Normal' },
-              { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
-              { value: 'muita_dificuldade', label: 'Muita dificuldade' },
-              { value: 'nao_conseguiu', label: 'Não conseguiu falar' },
-            ]}
           />
 
-          <SelectField
-            label="Comer e mastigar"
+          <SymptomSlider
+            label="Comer/Mastigar"
             value={dayEntry.eveningEating}
             onChange={(v) => setDayEntry({ ...dayEntry, eveningEating: v })}
-            options={[
-              { value: 'normal', label: 'Normal' },
-              { value: 'alguma_dificuldade', label: 'Alguma dificuldade' },
-              { value: 'muita_dificuldade', label: 'Muita dificuldade' },
-              { value: 'nao_conseguiu', label: 'Não conseguiu comer' },
-            ]}
           />
         </section>
 
@@ -2371,13 +2335,13 @@ const MeigeTracker = () => {
       const eveningFace = entry.eveningFace || 0;
       const eveningNeck = entry.eveningNeck || 0;
 
-      // Speech/eating numeric values per epoch
-      const morningSpeech = speechMap[entry.morningSpeech] ?? 0;
-      const morningEating = eatingMap[entry.morningEating] ?? 0;
-      const afternoonSpeech = speechMap[entry.afternoonSpeech] ?? 0;
-      const afternoonEating = eatingMap[entry.afternoonEating] ?? 0;
-      const eveningSpeech = speechMap[entry.eveningSpeech] ?? 0;
-      const eveningEating = eatingMap[entry.eveningEating] ?? 0;
+      // Speech/eating are now 0-10 sliders, no more ordinal mapping needed
+      const morningSpeech = entry.morningSpeech || 0;
+      const morningEating = entry.morningEating || 0;
+      const afternoonSpeech = entry.afternoonSpeech || 0;
+      const afternoonEating = entry.afternoonEating || 0;
+      const eveningSpeech = entry.eveningSpeech || 0;
+      const eveningEating = entry.eveningEating || 0;
 
       // MSI (Motor Severity Index) per epoch = (Eyes + Jaw + Neck) / 3
       const wakeMSI = (wakeEyes + wakeFace) / 2;  // No neck data at wake
@@ -2510,8 +2474,8 @@ const MeigeTracker = () => {
             Metodologia e Definições
           </summary>
           <div className="mt-3 text-xs text-slate-400 space-y-2">
-            <div><strong className="text-slate-300">Épocas temporais:</strong> Acordar (0-30min), Manhã (08-12h), Tarde (12-18h), Noite (18h+)</div>
-            <div><strong className="text-slate-300">Mapeamento ordinal:</strong> Normal=0, Alguma dificuldade=3, Muita dificuldade=7, Incapacidade=10</div>
+            <div><strong className="text-slate-300">Épocas temporais:</strong> Acordar, Manhã, Tarde, Noite</div>
+            <div><strong className="text-slate-300">Escala:</strong> Todos os sintomas de 0 (ausente) a 10 (máximo)</div>
             <div><strong className="text-slate-300">MSI (Motor Severity Index):</strong> (Olhos + Mandíbula + Pescoço) / 3</div>
             <div><strong className="text-slate-300">BFI (Bulbar Function Index):</strong> (Fala + Mastigação) / 2</div>
             <div><strong className="text-slate-300">GDB (Global Dystonia Burden):</strong> 0.6 × MSI + 0.4 × BFI</div>
@@ -2565,8 +2529,6 @@ const MeigeTracker = () => {
                     <Line type="monotone" dataKey="eyes" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 4 }} />
                     <Line type="monotone" dataKey="jaw" name="Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4 }} />
                     <Line type="monotone" dataKey="neck" name="Cervical" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="speech" name="Fala" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="eating" name="Mastigação" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
