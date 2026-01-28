@@ -1727,11 +1727,21 @@ const MeigeTracker = () => {
               const selectedDoctor = medicos[num - 1];
               // Determine if it's a past or future date
               const isPast = new Date(dateStr) < new Date(new Date().toDateString());
-              setMedicos(medicos.map(doc =>
-                doc.id === selectedDoctor.id
-                  ? { ...doc, [isPast ? 'ultimaConsulta' : 'proximaConsulta']: dateStr }
-                  : doc
-              ));
+              setMedicos(medicos.map(doc => {
+                if (doc.id !== selectedDoctor.id) return doc;
+                if (isPast) {
+                  // Past date - just update ultimaConsulta
+                  return { ...doc, ultimaConsulta: dateStr };
+                } else {
+                  // Future date - move old proximaConsulta to ultimaConsulta, set new proximaConsulta
+                  return {
+                    ...doc,
+                    ultimaConsulta: doc.proximaConsulta || doc.ultimaConsulta,
+                    proximaConsulta: dateStr,
+                    proximaHora: ''
+                  };
+                }
+              }));
               alert(`✅ Consulta ${isPast ? 'passada' : ''} adicionada para ${selectedDoctor.nome}!`);
             }
           }
