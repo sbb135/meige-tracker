@@ -1597,22 +1597,6 @@ const MeigeTracker = () => {
               </div>
             </div>
 
-            {/* Concentration field for liquids */}
-            <div className="mb-4">
-              <label className="block text-xs text-slate-400 mb-1">Concentração (para líquidos, ex: 20 mg/mL)</label>
-              <input
-                type="text"
-                value={med.concentration || ''}
-                onChange={(e) => {
-                  const newMeds = [...medications];
-                  newMeds[idx].concentration = e.target.value;
-                  setMedications(newMeds);
-                }}
-                className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
-                placeholder="Ex: 20 mg/mL"
-              />
-            </div>
-
             <button
               onClick={() => setMedications(medications.filter((_, i) => i !== idx))}
               className="text-sm text-red-400 hover:text-red-300"
@@ -1732,10 +1716,10 @@ const MeigeTracker = () => {
           </span>
           {hasAppointment && (
             <span className={`mt-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${appointments[0].tipo === 'Neurologista' ? 'bg-purple-500 text-white' :
-                appointments[0].tipo === 'Psiquiatra' ? 'bg-indigo-500 text-white' :
-                  appointments[0].tipo.includes('Endo') ? 'bg-teal-500 text-white' :
-                    appointments[0].tipo.includes('Família') ? 'bg-green-500 text-white' :
-                      'bg-sky-500 text-white'
+              appointments[0].tipo === 'Psiquiatra' ? 'bg-indigo-500 text-white' :
+                appointments[0].tipo.includes('Endo') ? 'bg-teal-500 text-white' :
+                  appointments[0].tipo.includes('Família') ? 'bg-green-500 text-white' :
+                    'bg-sky-500 text-white'
               }`}>
               {appointments[0].tipo.substring(0, 5)}
             </span>
