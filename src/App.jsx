@@ -2530,12 +2530,13 @@ const MeigeTracker = () => {
             Metodologia e Definições
           </summary>
           <div className="mt-3 text-xs text-slate-400 space-y-2">
-            <div><strong className="text-slate-300">Épocas temporais:</strong> Acordar, Manhã, Tarde, Noite</div>
-            <div><strong className="text-slate-300">Escala:</strong> Todos os sintomas de 0 (ausente) a 10 (máximo)</div>
+            <div><strong className="text-slate-300">Épocas:</strong> Acordar (30 min), Manhã, Tarde, Noite</div>
+            <div><strong className="text-slate-300">Escala BFMDRS (0-4):</strong> 0=Nenhum, 1=Leve, 2=Moderado, 3=Severo, 4=Incapacitante</div>
+            <div><strong className="text-slate-300">Olhos:</strong> Severidade + Frequência (única região com frequência - espasmos episódicos)</div>
             <div><strong className="text-slate-300">MSI (Motor Severity Index):</strong> (Olhos + Mandíbula + Pescoço) / 3</div>
             <div><strong className="text-slate-300">BFI (Bulbar Function Index):</strong> (Fala + Mastigação) / 2</div>
             <div><strong className="text-slate-300">GDB (Global Dystonia Burden):</strong> 0.6 × MSI + 0.4 × BFI</div>
-            <div><strong className="text-slate-300">Estatísticas:</strong> Médias com n={filteredDates.length} dias</div>
+            <div><strong className="text-slate-300">Dados:</strong> n={filteredDates.length} dias</div>
           </div>
         </details>
 
