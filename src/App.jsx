@@ -1758,12 +1758,22 @@ const MeigeTracker = () => {
         <div className="grid grid-cols-7 gap-1">
           {days}
         </div>
-        {/* Legend */}
+        {/* Legend - Dynamic based on doctors */}
         <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-300">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-purple-500"></span> Neurologia</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-indigo-500"></span> Psiquiatria</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-teal-500"></span> Endocrinologia</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500"></span> Família</span>
+          {[...new Map(medicos.map(m => [m.especialidade, m])).values()].map(m => {
+            const colorMap = {
+              purple: 'bg-purple-500', indigo: 'bg-indigo-500', teal: 'bg-teal-500',
+              green: 'bg-green-500', sky: 'bg-sky-500', amber: 'bg-amber-500',
+              rose: 'bg-rose-500', orange: 'bg-orange-500'
+            };
+            const dotColor = m.color ? colorMap[m.color] : 'bg-sky-500';
+            return (
+              <span key={m.especialidade} className="flex items-center gap-1">
+                <span className={`w-3 h-3 rounded-full ${dotColor}`}></span>
+                {m.especialidade}
+              </span>
+            );
+          })}
         </div>
       </div>
     );
@@ -1828,7 +1838,12 @@ const MeigeTracker = () => {
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-medium text-slate-100">{m.nome}</p>
-                    <p className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${getSpecialtyColor(m.especialidade)} text-white`}>
+                    <p className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${m.color ? ({
+                        purple: 'bg-purple-500', indigo: 'bg-indigo-500', teal: 'bg-teal-500',
+                        green: 'bg-green-500', sky: 'bg-sky-500', amber: 'bg-amber-500',
+                        rose: 'bg-rose-500', orange: 'bg-orange-500'
+                      }[m.color] || 'bg-sky-500') : getSpecialtyColor(m.especialidade)
+                      } text-white`}>
                       {m.especialidade}
                     </p>
                   </div>
@@ -1843,6 +1858,13 @@ const MeigeTracker = () => {
 
                 {editingDoctorId === m.id ? (
                   <div className="mt-3 p-3 bg-slate-600 rounded">
+                    <label className="block text-xs text-slate-400 mb-1">Local/Clínica</label>
+                    <input
+                      type="text"
+                      defaultValue={m.local}
+                      className="w-full p-2 rounded bg-slate-700 text-slate-100 text-sm border border-slate-500 mb-2"
+                      id={`edit-local-${m.id}`}
+                    />
                     <label className="block text-xs text-slate-400 mb-1">Próxima Consulta</label>
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       <input
@@ -1863,7 +1885,11 @@ const MeigeTracker = () => {
                       onClick={() => {
                         const newDate = document.getElementById(`edit-date-${m.id}`).value;
                         const newTime = document.getElementById(`edit-time-${m.id}`).value;
-                        updateDoctorAppointment(m.id, newDate, newTime);
+                        const newLocal = document.getElementById(`edit-local-${m.id}`).value;
+                        setMedicos(medicos.map(doc =>
+                          doc.id === m.id ? { ...doc, proximaConsulta: newDate, proximaHora: newTime, local: newLocal } : doc
+                        ));
+                        setEditingDoctorId(null);
                       }}
                       className="w-full py-2 bg-sky-600 text-white rounded text-sm font-medium hover:bg-sky-500 mb-2"
                     >
