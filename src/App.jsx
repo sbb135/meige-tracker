@@ -1312,11 +1312,11 @@ const MeigeTracker = () => {
                   onClick={() => setDayEntry({
                     ...dayEntry,
                     sideEffects: {
-                      ...dayEntry.sideEffects,
-                      [effect.key]: !dayEntry.sideEffects[effect.key]
+                      ...(dayEntry.sideEffects || {}),
+                      [effect.key]: !(dayEntry.sideEffects?.[effect.key])
                     }
                   })}
-                  className={`px-3 py-2 rounded-lg text-sm ${dayEntry.sideEffects[effect.key]
+                  className={`px-3 py-2 rounded-lg text-sm ${(dayEntry.sideEffects?.[effect.key])
                     ? 'bg-amber-600 text-white'
                     : 'bg-slate-700 text-slate-300'
                     }`}
@@ -2590,8 +2590,8 @@ const MeigeTracker = () => {
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div className="text-slate-400">Acordar: <span className="text-slate-200">O:{entry.wakeEyes} M:{entry.wakeFace}</span></div>
-                      <div className="text-slate-400">Manhã: <span className="text-slate-200">O:{entry.morningEyes} M:{entry.morningFace}</span></div>
-                      <div className="text-slate-400">Tarde: <span className="text-slate-200">O:{entry.afternoonEyes} M:{entry.afternoonFace}</span></div>
+                      <div className="text-slate-400">Manhã: <span className="text-slate-200">O:{entry.morningEyes} M:{entry.morningFace} P:{entry.morningNeck || 0}</span></div>
+                      <div className="text-slate-400">Tarde: <span className="text-slate-200">O:{entry.afternoonEyes} M:{entry.afternoonFace} P:{entry.afternoonNeck || 0}</span></div>
                     </div>
                     {entry.notes && <p className="mt-2 text-sm text-slate-500 italic">"{entry.notes}"</p>}
                   </div>
