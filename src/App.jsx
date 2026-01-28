@@ -732,31 +732,43 @@ const MeigeTracker = () => {
   };
 
   // Componente Slider
-  const SymptomSlider = ({ label, value, onChange, description }) => (
-    <div className="mb-5">
-      <div className="flex justify-between items-center mb-2">
-        <label className="font-medium text-slate-200">{label}</label>
-        <span className={`text-lg font-bold ${value <= 2 ? 'text-sky-400' : value <= 5 ? 'text-slate-300' : 'text-slate-100'
-          }`}>{value}/10</span>
+  // Component: 0-4 Clinical Scale (BFMDRS-aligned)
+  const ClinicalScale = ({ label, value, onChange, type = 'severity' }) => {
+    const scales = {
+      severity: ['Nenhum', 'Leve', 'Moderado', 'Severo', 'Incapacitante'],
+      frequency: ['Nenhum', 'Ocasional', 'Intermitente', 'Frequente', 'Contínuo'],
+      function: ['Normal', 'Leve', 'Moderado', 'Severo', 'Incapaz'],
+    };
+    const labels = scales[type] || scales.severity;
+    const colors = ['bg-emerald-600', 'bg-sky-600', 'bg-amber-500', 'bg-orange-500', 'bg-red-600'];
+
+    return (
+      <div className="mb-4">
+        <div className="flex justify-between items-center mb-2">
+          <label className="font-medium text-slate-200 text-sm">{label}</label>
+          <span className="text-sm font-bold text-slate-400">{value}/4</span>
+        </div>
+        <div className="flex gap-1">
+          {[0, 1, 2, 3, 4].map(v => (
+            <button
+              key={v}
+              onClick={() => onChange(v)}
+              className={`flex-1 py-2 px-1 rounded text-xs font-medium transition-all ${value === v
+                ? `${colors[v]} text-white`
+                : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                }`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-between text-xs text-slate-500 mt-1">
+          <span>{labels[0]}</span>
+          <span>{labels[4]}</span>
+        </div>
       </div>
-      {description && <p className="text-sm text-slate-400 mb-2">{description}</p>}
-      <input
-        type="range"
-        min="0"
-        max="10"
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-slate-600"
-        style={{
-          background: `linear-gradient(to right, #0ea5e9 0%, #0ea5e9 ${value * 10}%, #475569 ${value * 10}%, #475569 100%)`
-        }}
-      />
-      <div className="flex justify-between text-xs text-slate-500 mt-1">
-        <span>Sem espasmos</span>
-        <span>Muito forte</span>
-      </div>
-    </div>
-  );
+    );
+  };
 
   // Componente Select
   const SelectField = ({ label, value, onChange, options, description }) => (
@@ -927,18 +939,46 @@ const MeigeTracker = () => {
             Ao acordar (primeiros 30 minutos)
           </h3>
 
-          <SymptomSlider
-            label="Olhos (blefarospasmo)"
+          <ClinicalScale
+            label="Olhos - Severidade"
             value={dayEntry.wakeEyes}
             onChange={(v) => setDayEntry({ ...dayEntry, wakeEyes: v })}
-            description="0 = Sem espasmos | 10 = Olhos fecham involuntariamente"
+            type="severity"
           />
 
-          <SymptomSlider
-            label="Mandíbula"
+          <ClinicalScale
+            label="Olhos - Frequência"
+            value={dayEntry.wakeEyesFreq || 0}
+            onChange={(v) => setDayEntry({ ...dayEntry, wakeEyesFreq: v })}
+            type="frequency"
+          />
+
+          <ClinicalScale
+            label="Mandíbula - Severidade"
             value={dayEntry.wakeFace}
             onChange={(v) => setDayEntry({ ...dayEntry, wakeFace: v })}
-            description="0 = Sem tensão | 10 = Movimentos involuntários fortes"
+            type="severity"
+          />
+
+          <ClinicalScale
+            label="Pescoço - Severidade"
+            value={dayEntry.wakeNeck || 0}
+            onChange={(v) => setDayEntry({ ...dayEntry, wakeNeck: v })}
+            type="severity"
+          />
+
+          <ClinicalScale
+            label="Fala"
+            value={dayEntry.wakeSpeech || 0}
+            onChange={(v) => setDayEntry({ ...dayEntry, wakeSpeech: v })}
+            type="function"
+          />
+
+          <ClinicalScale
+            label="Comer/Mastigar"
+            value={dayEntry.wakeEating || 0}
+            onChange={(v) => setDayEntry({ ...dayEntry, wakeEating: v })}
+            type="function"
           />
 
           <SelectField
@@ -980,34 +1020,46 @@ const MeigeTracker = () => {
             Manhã
           </h3>
 
-          <SymptomSlider
-            label="Olhos"
+          <ClinicalScale
+            label="Olhos - Severidade"
             value={dayEntry.morningEyes}
             onChange={(v) => setDayEntry({ ...dayEntry, morningEyes: v })}
+            type="severity"
           />
 
-          <SymptomSlider
+          <ClinicalScale
+            label="Olhos - Frequência"
+            value={dayEntry.morningEyesFreq || 0}
+            onChange={(v) => setDayEntry({ ...dayEntry, morningEyesFreq: v })}
+            type="frequency"
+          />
+
+          <ClinicalScale
             label="Mandíbula"
             value={dayEntry.morningFace}
             onChange={(v) => setDayEntry({ ...dayEntry, morningFace: v })}
+            type="severity"
           />
 
-          <SymptomSlider
+          <ClinicalScale
             label="Pescoço"
             value={dayEntry.morningNeck}
             onChange={(v) => setDayEntry({ ...dayEntry, morningNeck: v })}
+            type="severity"
           />
 
-          <SymptomSlider
+          <ClinicalScale
             label="Fala"
             value={dayEntry.morningSpeech}
             onChange={(v) => setDayEntry({ ...dayEntry, morningSpeech: v })}
+            type="function"
           />
 
-          <SymptomSlider
+          <ClinicalScale
             label="Comer/Mastigar"
             value={dayEntry.morningEating}
             onChange={(v) => setDayEntry({ ...dayEntry, morningEating: v })}
+            type="function"
           />
         </section>
 
@@ -1017,34 +1069,46 @@ const MeigeTracker = () => {
             Tarde
           </h3>
 
-          <SymptomSlider
-            label="Olhos"
+          <ClinicalScale
+            label="Olhos - Severidade"
             value={dayEntry.afternoonEyes}
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonEyes: v })}
+            type="severity"
           />
 
-          <SymptomSlider
+          <ClinicalScale
+            label="Olhos - Frequência"
+            value={dayEntry.afternoonEyesFreq || 0}
+            onChange={(v) => setDayEntry({ ...dayEntry, afternoonEyesFreq: v })}
+            type="frequency"
+          />
+
+          <ClinicalScale
             label="Mandíbula"
             value={dayEntry.afternoonFace}
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonFace: v })}
+            type="severity"
           />
 
-          <SymptomSlider
+          <ClinicalScale
             label="Pescoço"
             value={dayEntry.afternoonNeck}
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonNeck: v })}
+            type="severity"
           />
 
-          <SymptomSlider
+          <ClinicalScale
             label="Fala"
             value={dayEntry.afternoonSpeech}
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonSpeech: v })}
+            type="function"
           />
 
-          <SymptomSlider
+          <ClinicalScale
             label="Comer/Mastigar"
             value={dayEntry.afternoonEating}
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonEating: v })}
+            type="function"
           />
         </section>
 
@@ -1054,34 +1118,46 @@ const MeigeTracker = () => {
             Noite
           </h3>
 
-          <SymptomSlider
-            label="Olhos"
+          <ClinicalScale
+            label="Olhos - Severidade"
             value={dayEntry.eveningEyes}
             onChange={(v) => setDayEntry({ ...dayEntry, eveningEyes: v })}
+            type="severity"
           />
 
-          <SymptomSlider
+          <ClinicalScale
+            label="Olhos - Frequência"
+            value={dayEntry.eveningEyesFreq || 0}
+            onChange={(v) => setDayEntry({ ...dayEntry, eveningEyesFreq: v })}
+            type="frequency"
+          />
+
+          <ClinicalScale
             label="Mandíbula"
             value={dayEntry.eveningFace}
             onChange={(v) => setDayEntry({ ...dayEntry, eveningFace: v })}
+            type="severity"
           />
 
-          <SymptomSlider
+          <ClinicalScale
             label="Pescoço"
             value={dayEntry.eveningNeck}
             onChange={(v) => setDayEntry({ ...dayEntry, eveningNeck: v })}
+            type="severity"
           />
 
-          <SymptomSlider
+          <ClinicalScale
             label="Fala"
             value={dayEntry.eveningSpeech}
             onChange={(v) => setDayEntry({ ...dayEntry, eveningSpeech: v })}
+            type="function"
           />
 
-          <SymptomSlider
+          <ClinicalScale
             label="Comer/Mastigar"
             value={dayEntry.eveningEating}
             onChange={(v) => setDayEntry({ ...dayEntry, eveningEating: v })}
+            type="function"
           />
         </section>
 
@@ -1452,6 +1528,18 @@ const MeigeTracker = () => {
             />
           </section>
         )}
+        {/* FUNÇÃO DIÁRIA */}
+        <section className="bg-slate-800 rounded-xl p-5 mb-4">
+          <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
+            Limitação funcional hoje
+          </h3>
+          <ClinicalScale
+            label="Quanto os sintomas limitaram o seu dia?"
+            value={dayEntry.dailyLimitation || 0}
+            onChange={(v) => setDayEntry({ ...dayEntry, dailyLimitation: v })}
+            type="severity"
+          />
+        </section>
 
         {/* NOTAS */}
         <section className="bg-slate-800 rounded-xl p-5 mb-4">
