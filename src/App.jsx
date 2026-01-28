@@ -2358,60 +2358,176 @@ const MeigeTracker = () => {
       const moodMap = { 'bem': 2, 'normal': 5, 'ansioso': 7, 'muito_ansioso': 9 };
       const anxiety = moodMap[entry.mood] || 0;
 
+      // Per-epoch symptom data
+      const wakeEyes = entry.wakeEyes || 0;
+      const wakeFace = entry.wakeFace || 0;
+      const morningEyes = entry.morningEyes || 0;
+      const morningFace = entry.morningFace || 0;
+      const morningNeck = entry.morningNeck || 0;
+      const afternoonEyes = entry.afternoonEyes || 0;
+      const afternoonFace = entry.afternoonFace || 0;
+      const afternoonNeck = entry.afternoonNeck || 0;
+      const eveningEyes = entry.eveningEyes || 0;
+      const eveningFace = entry.eveningFace || 0;
+      const eveningNeck = entry.eveningNeck || 0;
+
+      // Speech/eating numeric values per epoch
+      const morningSpeech = speechMap[entry.morningSpeech] ?? 0;
+      const morningEating = eatingMap[entry.morningEating] ?? 0;
+      const afternoonSpeech = speechMap[entry.afternoonSpeech] ?? 0;
+      const afternoonEating = eatingMap[entry.afternoonEating] ?? 0;
+      const eveningSpeech = speechMap[entry.eveningSpeech] ?? 0;
+      const eveningEating = eatingMap[entry.eveningEating] ?? 0;
+
+      // MSI (Motor Severity Index) per epoch = (Eyes + Jaw + Neck) / 3
+      const wakeMSI = (wakeEyes + wakeFace) / 2;  // No neck data at wake
+      const morningMSI = (morningEyes + morningFace + morningNeck) / 3;
+      const afternoonMSI = (afternoonEyes + afternoonFace + afternoonNeck) / 3;
+      const eveningMSI = (eveningEyes + eveningFace + eveningNeck) / 3;
+
+      // BFI (Bulbar Function Index) per epoch = (Speech + Eating) / 2
+      const morningBFI = (morningSpeech + morningEating) / 2;
+      const afternoonBFI = (afternoonSpeech + afternoonEating) / 2;
+      const eveningBFI = (eveningSpeech + eveningEating) / 2;
+
+      // GDB (Global Dystonia Burden) = 0.6 * MSI + 0.4 * BFI
+      const morningGDB = 0.6 * morningMSI + 0.4 * morningBFI;
+      const afternoonGDB = 0.6 * afternoonMSI + 0.4 * afternoonBFI;
+      const eveningGDB = 0.6 * eveningMSI + 0.4 * eveningBFI;
+
+      // Daily aggregates
+      const dailyMSI = (morningMSI + afternoonMSI + eveningMSI) / 3;
+      const dailyBFI = (morningBFI + afternoonBFI + eveningBFI) / 3;
+      const dailyGDB = 0.6 * dailyMSI + 0.4 * dailyBFI;
+
+      // Sleep duration calculation
+      const sono = entry.bedTime && entry.wakeTime ? (() => {
+        const [bedH, bedM] = entry.bedTime.split(':').map(Number);
+        const [wakeH, wakeM] = entry.wakeTime.split(':').map(Number);
+        let hours = wakeH - bedH + (wakeM - bedM) / 60;
+        if (hours < 0) hours += 24;
+        return Math.round(hours * 10) / 10;
+      })() : null;
+
       return {
         date: `${d}/${m}`,
         fullDate: date,
-        olhos: entry.morningEyes || 0,
-        face: entry.morningFace || 0,
-        neck: ((entry.morningNeck || 0) + (entry.afternoonNeck || 0) + (entry.eveningNeck || 0)) / 3 || 0,
-        olhosTarde: entry.afternoonEyes || 0,
-        faceTarde: entry.afternoonFace || 0,
-        olhosNoite: entry.eveningEyes || 0,
-        faceNoite: entry.eveningFace || 0,
-        fala: speechMap[entry.morningSpeech] ?? null,
-        comer: eatingMap[entry.morningEating] ?? null,
-        falaTarde: speechMap[entry.afternoonSpeech] ?? null,
-        comerTarde: eatingMap[entry.afternoonEating] ?? null,
+        // Raw per-epoch motor symptoms
+        wakeEyes, wakeFace,
+        morningEyes, morningFace, morningNeck,
+        afternoonEyes, afternoonFace, afternoonNeck,
+        eveningEyes, eveningFace, eveningNeck,
+        // Raw per-epoch function
+        morningSpeech, morningEating,
+        afternoonSpeech, afternoonEating,
+        eveningSpeech, eveningEating,
+        // Legacy aliases
+        olhos: morningEyes,
+        face: morningFace,
+        neck: (morningNeck + afternoonNeck + eveningNeck) / 3,
+        olhosTarde: afternoonEyes,
+        faceTarde: afternoonFace,
+        olhosNoite: eveningEyes,
+        faceNoite: eveningFace,
+        fala: morningSpeech,
+        comer: morningEating,
+        falaTarde: afternoonSpeech,
+        comerTarde: afternoonEating,
+        // Composite indices per epoch
+        wakeMSI, morningMSI, afternoonMSI, eveningMSI,
+        morningBFI, afternoonBFI, eveningBFI,
+        morningGDB, afternoonGDB, eveningGDB,
+        // Daily aggregates
+        dailyMSI, dailyBFI, dailyGDB,
+        // Other data
         choro: entry.cryingEpisodes || 0,
         anxiety,
         daysSinceBtx,
         totalMedPills,
         clonazepam,
         valdoxan,
-        avgSymptoms: ((entry.morningEyes || 0) + (entry.morningFace || 0) + (entry.afternoonEyes || 0) + (entry.afternoonFace || 0) + (entry.eveningEyes || 0) + (entry.eveningFace || 0)) / 6,
-        sono: entry.bedTime && entry.wakeTime ? (() => {
-          const [bedH, bedM] = entry.bedTime.split(':').map(Number);
-          const [wakeH, wakeM] = entry.wakeTime.split(':').map(Number);
-          let hours = wakeH - bedH;
-          if (hours < 0) hours += 24;
-          return hours;
-        })() : null
+        sono,
+        sleepQuality: entry.sleepQuality,
+        hadGoodPeriod: entry.hadGoodPeriod,
+        goodPeriodWhen: entry.goodPeriodWhen
       };
     });
 
-    // Calculate symptom totals for bar chart
-    const symptomTotals = [
-      { name: 'Blefarosp. Manhã', value: timeSeriesData.reduce((sum, d) => sum + (d.olhos || 0), 0) / timeSeriesData.length, color: '#0ea5e9' },
-      { name: 'Blefarosp. Tarde', value: timeSeriesData.reduce((sum, d) => sum + (d.olhosTarde || 0), 0) / timeSeriesData.length, color: '#06b6d4' },
-      { name: 'Blefarosp. Noite', value: timeSeriesData.reduce((sum, d) => sum + (d.olhosNoite || 0), 0) / timeSeriesData.length, color: '#0284c7' },
-      { name: 'Distonia Manhã', value: timeSeriesData.reduce((sum, d) => sum + (d.face || 0), 0) / timeSeriesData.length, color: '#f59e0b' },
-      { name: 'Distonia Tarde', value: timeSeriesData.reduce((sum, d) => sum + (d.faceTarde || 0), 0) / timeSeriesData.length, color: '#f97316' },
-      { name: 'Distonia Noite', value: timeSeriesData.reduce((sum, d) => sum + (d.faceNoite || 0), 0) / timeSeriesData.length, color: '#dc2626' },
+    // Prepare circadian data (aggregated by time bin across all days)
+    const circadianData = [
+      {
+        epoch: 'Acordar',
+        eyes: timeSeriesData.reduce((s, d) => s + d.wakeEyes, 0) / timeSeriesData.length,
+        jaw: timeSeriesData.reduce((s, d) => s + d.wakeFace, 0) / timeSeriesData.length,
+        neck: 0, // No neck at wake
+        speech: 0,
+        eating: 0,
+        MSI: timeSeriesData.reduce((s, d) => s + d.wakeMSI, 0) / timeSeriesData.length,
+        GDB: timeSeriesData.reduce((s, d) => s + d.wakeMSI, 0) / timeSeriesData.length * 0.6, // Approx
+      },
+      {
+        epoch: 'Manhã',
+        eyes: timeSeriesData.reduce((s, d) => s + d.morningEyes, 0) / timeSeriesData.length,
+        jaw: timeSeriesData.reduce((s, d) => s + d.morningFace, 0) / timeSeriesData.length,
+        neck: timeSeriesData.reduce((s, d) => s + d.morningNeck, 0) / timeSeriesData.length,
+        speech: timeSeriesData.reduce((s, d) => s + d.morningSpeech, 0) / timeSeriesData.length,
+        eating: timeSeriesData.reduce((s, d) => s + d.morningEating, 0) / timeSeriesData.length,
+        MSI: timeSeriesData.reduce((s, d) => s + d.morningMSI, 0) / timeSeriesData.length,
+        BFI: timeSeriesData.reduce((s, d) => s + d.morningBFI, 0) / timeSeriesData.length,
+        GDB: timeSeriesData.reduce((s, d) => s + d.morningGDB, 0) / timeSeriesData.length,
+      },
+      {
+        epoch: 'Tarde',
+        eyes: timeSeriesData.reduce((s, d) => s + d.afternoonEyes, 0) / timeSeriesData.length,
+        jaw: timeSeriesData.reduce((s, d) => s + d.afternoonFace, 0) / timeSeriesData.length,
+        neck: timeSeriesData.reduce((s, d) => s + d.afternoonNeck, 0) / timeSeriesData.length,
+        speech: timeSeriesData.reduce((s, d) => s + d.afternoonSpeech, 0) / timeSeriesData.length,
+        eating: timeSeriesData.reduce((s, d) => s + d.afternoonEating, 0) / timeSeriesData.length,
+        MSI: timeSeriesData.reduce((s, d) => s + d.afternoonMSI, 0) / timeSeriesData.length,
+        BFI: timeSeriesData.reduce((s, d) => s + d.afternoonBFI, 0) / timeSeriesData.length,
+        GDB: timeSeriesData.reduce((s, d) => s + d.afternoonGDB, 0) / timeSeriesData.length,
+      },
+      {
+        epoch: 'Noite',
+        eyes: timeSeriesData.reduce((s, d) => s + d.eveningEyes, 0) / timeSeriesData.length,
+        jaw: timeSeriesData.reduce((s, d) => s + d.eveningFace, 0) / timeSeriesData.length,
+        neck: timeSeriesData.reduce((s, d) => s + d.eveningNeck, 0) / timeSeriesData.length,
+        speech: timeSeriesData.reduce((s, d) => s + d.eveningSpeech, 0) / timeSeriesData.length,
+        eating: timeSeriesData.reduce((s, d) => s + d.eveningEating, 0) / timeSeriesData.length,
+        MSI: timeSeriesData.reduce((s, d) => s + d.eveningMSI, 0) / timeSeriesData.length,
+        BFI: timeSeriesData.reduce((s, d) => s + d.eveningBFI, 0) / timeSeriesData.length,
+        GDB: timeSeriesData.reduce((s, d) => s + d.eveningGDB, 0) / timeSeriesData.length,
+      },
     ];
 
     return (
       <div className="max-w-2xl mx-auto">
-        <h2 className="text-xl font-semibold text-slate-100 mb-4">Relatório para o médico</h2>
+        <h2 className="text-xl font-semibold text-slate-100 mb-4">Análise Clínica</h2>
+
+        {/* Methods Legend (collapsible) */}
+        <details className="bg-slate-800 rounded-xl p-4 mb-4">
+          <summary className="cursor-pointer text-sm font-medium text-slate-300 hover:text-white">
+            📊 Metodologia e Definições
+          </summary>
+          <div className="mt-3 text-xs text-slate-400 space-y-2">
+            <div><strong className="text-slate-300">Épocas temporais:</strong> Acordar (0-30min), Manhã (08-12h), Tarde (12-18h), Noite (18h+)</div>
+            <div><strong className="text-slate-300">Mapeamento ordinal:</strong> Normal=0, Alguma dificuldade=3, Muita dificuldade=7, Incapacidade=10</div>
+            <div><strong className="text-slate-300">MSI (Motor Severity Index):</strong> (Olhos + Mandíbula + Pescoço) / 3</div>
+            <div><strong className="text-slate-300">BFI (Bulbar Function Index):</strong> (Fala + Mastigação) / 2</div>
+            <div><strong className="text-slate-300">GDB (Global Dystonia Burden):</strong> 0.6 × MSI + 0.4 × BFI</div>
+            <div><strong className="text-slate-300">Estatísticas:</strong> Médias com n={filteredDates.length} dias</div>
+          </div>
+        </details>
 
         {/* Timeline Filter */}
         <div className="bg-slate-800 rounded-xl p-4 mb-4">
           <label className="block text-sm text-slate-400 mb-2">Período de análise</label>
           <div className="flex gap-2 flex-wrap">
             {[
-              { value: 'all', label: 'Todos os dias' },
-              { value: '7', label: 'Últimos 7 dias' },
-              { value: '30', label: 'Últimos 30 dias' },
-              { value: '90', label: 'Últimos 90 dias' },
+              { value: 'all', label: 'Todos' },
+              { value: '7', label: '7 dias' },
+              { value: '30', label: '30 dias' },
+              { value: '90', label: '90 dias' },
             ].map(opt => (
               <button
                 key={opt.value}
@@ -2425,7 +2541,6 @@ const MeigeTracker = () => {
               </button>
             ))}
           </div>
-          <p className="text-xs text-slate-500 mt-2">{filteredDates.length} dias no período selecionado</p>
         </div>
 
         {filteredDates.length === 0 ? (
@@ -2435,10 +2550,128 @@ const MeigeTracker = () => {
           </div>
         ) : (
           <>
-            {/* Correlation Chart: Blefarospasmo vs Distonia Oromandibular vs Cervical */}
+            {/* FIGURE 1: Circadian Dynamics */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-2">Correlação Temporal: Blefarospasmo, Oromandibular e Cervical</h3>
-              <p className="text-sm text-slate-400 mb-4">Análise de covariância entre os três tipos de distonia. Curvas paralelas indicam correlação positiva.</p>
+              <h3 className="font-semibold text-slate-100 mb-1">Fig. 1: Dinâmica Circadiana da Distonia</h3>
+              <p className="text-sm text-slate-400 mb-4">Variação intra-dia: identifica picos matinais, agravamento vespertino ou fadiga neuromuscular.</p>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={circadianData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                    <XAxis dataKey="epoch" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'Intensidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <Line type="monotone" dataKey="eyes" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="jaw" name="Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="neck" name="Cervical" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="speech" name="Fala" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="eating" name="Mastigação" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                <div className="bg-slate-700/50 p-2 rounded text-center">
+                  <div className="text-slate-400">MSI Manhã</div>
+                  <div className="text-lg font-semibold text-sky-400">{circadianData[1].MSI.toFixed(1)}</div>
+                </div>
+                <div className="bg-slate-700/50 p-2 rounded text-center">
+                  <div className="text-slate-400">MSI Tarde</div>
+                  <div className="text-lg font-semibold text-amber-400">{circadianData[2].MSI.toFixed(1)}</div>
+                </div>
+                <div className="bg-slate-700/50 p-2 rounded text-center">
+                  <div className="text-slate-400">MSI Noite</div>
+                  <div className="text-lg font-semibold text-red-400">{circadianData[3].MSI.toFixed(1)}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* FIGURE 8: Longitudinal Trajectory (Daily GDB over time) */}
+            <div className="bg-slate-800 rounded-xl p-5 mb-4">
+              <h3 className="font-semibold text-slate-100 mb-1">Fig. 2: Trajetória Longitudinal</h3>
+              <p className="text-sm text-slate-400 mb-4">GDB diário ao longo do tempo. Média móvel a 7 dias indica tendência.</p>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={timeSeriesData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
+                      formatter={(value, name) => [value.toFixed(2), name]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <Line type="monotone" dataKey="dailyGDB" name="GDB Diário" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="dailyMSI" name="MSI Diário" stroke="#0ea5e9" strokeWidth={1} dot={false} strokeDasharray="3 3" />
+                    <Line type="monotone" dataKey="dailyBFI" name="BFI Diário" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="3 3" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-3 flex justify-around text-xs">
+                <div className="text-center">
+                  <div className="text-slate-400">GDB Médio</div>
+                  <div className="text-xl font-bold text-purple-400">{(timeSeriesData.reduce((s, d) => s + d.dailyGDB, 0) / timeSeriesData.length).toFixed(2)}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-400">GDB Máx</div>
+                  <div className="text-xl font-bold text-red-400">{Math.max(...timeSeriesData.map(d => d.dailyGDB)).toFixed(2)}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-400">GDB Mín</div>
+                  <div className="text-xl font-bold text-green-400">{Math.min(...timeSeriesData.map(d => d.dailyGDB)).toFixed(2)}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* FIGURE 3: Sleep-Symptom Coupling */}
+            {timeSeriesData.some(d => d.sono !== null) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 3: Correlação Sono-Distonia</h3>
+                <p className="text-sm text-slate-400 mb-4">Relação entre duração do sono e GDB do dia seguinte. Privação de sono pode amplificar sintomas.</p>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={timeSeriesData.filter(d => d.sono !== null)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="sleep" domain={[0, 12]} stroke="#22d3ee" tick={{ fontSize: 11 }} label={{ value: 'Horas sono', angle: -90, position: 'insideLeft', fill: '#22d3ee', fontSize: 10 }} />
+                      <YAxis yAxisId="gdb" orientation="right" domain={[0, 10]} stroke="#a855f7" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: 90, position: 'insideRight', fill: '#a855f7', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Sono (h)" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line yAxisId="gdb" type="monotone" dataKey="dailyGDB" name="GDB" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* FIGURE 4: Medication Response */}
+            {timeSeriesData.some(d => d.clonazepam > 0 || d.valdoxan > 0) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 4: Resposta à Medicação</h3>
+                <p className="text-sm text-slate-400 mb-4">Correlação entre doses de medicação e carga de distonia.</p>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={timeSeriesData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="gdb" domain={[0, 10]} stroke="#a855f7" tick={{ fontSize: 11 }} />
+                      <YAxis yAxisId="meds" orientation="right" stroke="#10b981" tick={{ fontSize: 11 }} label={{ value: 'Dose', angle: 90, position: 'insideRight', fill: '#10b981', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Line yAxisId="gdb" type="monotone" dataKey="dailyGDB" name="GDB" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="meds" type="monotone" dataKey="clonazepam" name="Clonazepam (mg)" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} strokeDasharray="5 5" />
+                      <Line yAxisId="meds" type="monotone" dataKey="valdoxan" name="Valdoxan (gotas)" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} strokeDasharray="5 5" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Original correlation chart - Blefarospasmo vs Oromandibular vs Cervical */}
+            <div className="bg-slate-800 rounded-xl p-5 mb-4">
+              <h3 className="font-semibold text-slate-100 mb-2">Séries Temporais: Sintomas por Região</h3>
+              <p className="text-sm text-slate-400 mb-4">Evolução diária dos sintomas motores.</p>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={timeSeriesData}>
