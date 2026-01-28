@@ -1758,23 +1758,6 @@ const MeigeTracker = () => {
         <div className="grid grid-cols-7 gap-1">
           {days}
         </div>
-        {/* Legend - Dynamic based on doctors */}
-        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-300">
-          {[...new Map(medicos.map(m => [m.especialidade, m])).values()].map(m => {
-            const colorMap = {
-              purple: 'bg-purple-500', indigo: 'bg-indigo-500', teal: 'bg-teal-500',
-              green: 'bg-green-500', sky: 'bg-sky-500', amber: 'bg-amber-500',
-              rose: 'bg-rose-500', orange: 'bg-orange-500'
-            };
-            const dotColor = m.color ? colorMap[m.color] : 'bg-sky-500';
-            return (
-              <span key={m.especialidade} className="flex items-center gap-1">
-                <span className={`w-3 h-3 rounded-full ${dotColor}`}></span>
-                {m.especialidade}
-              </span>
-            );
-          })}
-        </div>
       </div>
     );
   };
@@ -1839,10 +1822,10 @@ const MeigeTracker = () => {
                   <div>
                     <p className="font-medium text-slate-100">{m.nome}</p>
                     <p className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${m.color ? ({
-                        purple: 'bg-purple-500', indigo: 'bg-indigo-500', teal: 'bg-teal-500',
-                        green: 'bg-green-500', sky: 'bg-sky-500', amber: 'bg-amber-500',
-                        rose: 'bg-rose-500', orange: 'bg-orange-500'
-                      }[m.color] || 'bg-sky-500') : getSpecialtyColor(m.especialidade)
+                      purple: 'bg-purple-500', indigo: 'bg-indigo-500', teal: 'bg-teal-500',
+                      green: 'bg-green-500', sky: 'bg-sky-500', amber: 'bg-amber-500',
+                      rose: 'bg-rose-500', orange: 'bg-orange-500'
+                    }[m.color] || 'bg-sky-500') : getSpecialtyColor(m.especialidade)
                       } text-white`}>
                       {m.especialidade}
                     </p>
