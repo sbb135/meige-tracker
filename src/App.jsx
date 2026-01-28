@@ -978,6 +978,12 @@ const MeigeTracker = () => {
             onChange={(v) => setDayEntry({ ...dayEntry, morningFace: v })}
           />
 
+          <SymptomSlider
+            label="Pescoço"
+            value={dayEntry.morningNeck}
+            onChange={(v) => setDayEntry({ ...dayEntry, morningNeck: v })}
+          />
+
           <SelectField
             label="Fala"
             value={dayEntry.morningSpeech}
@@ -1021,6 +1027,12 @@ const MeigeTracker = () => {
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonFace: v })}
           />
 
+          <SymptomSlider
+            label="Pescoço"
+            value={dayEntry.afternoonNeck}
+            onChange={(v) => setDayEntry({ ...dayEntry, afternoonNeck: v })}
+          />
+
           <SelectField
             label="Fala"
             value={dayEntry.afternoonSpeech}
@@ -1062,6 +1074,12 @@ const MeigeTracker = () => {
             label="Mandíbula"
             value={dayEntry.eveningFace}
             onChange={(v) => setDayEntry({ ...dayEntry, eveningFace: v })}
+          />
+
+          <SymptomSlider
+            label="Pescoço"
+            value={dayEntry.eveningNeck}
+            onChange={(v) => setDayEntry({ ...dayEntry, eveningNeck: v })}
           />
 
           <SelectField
@@ -2300,26 +2318,38 @@ const MeigeTracker = () => {
       const speechMap = { 'normal': 0, 'alguma_dificuldade': 3, 'muita_dificuldade': 7, 'nao_conseguiu': 10 };
       const eatingMap = { 'normal': 0, 'alguma_dificuldade': 3, 'muita_dificuldade': 7, 'nao_conseguiu': 10 };
 
-      // Calculate total medication pills for the day
+      // Calculate individual medication amounts
+      let clonazepam = 0;
+      let valdoxan = 0;
       let totalMedPills = 0;
       if (entry.medicationsTaken) {
-        Object.values(entry.medicationsTaken).forEach(medData => {
+        Object.entries(entry.medicationsTaken).forEach(([medName, medData]) => {
           if (typeof medData === 'object') {
-            // New structure with periods
             Object.values(medData).forEach(periodData => {
               if (periodData?.active && periodData?.qty) {
                 totalMedPills += periodData.qty;
+                if (medName.toLowerCase().includes('clonazepam')) {
+                  clonazepam += periodData.qty;
+                }
+                if (medName.toLowerCase().includes('valdoxan') || medName.toLowerCase().includes('agomelatina')) {
+                  valdoxan += periodData.qty;
+                }
               }
             });
           }
         });
       }
 
+      // Map mood/anxiety values
+      const moodMap = { 'bem': 2, 'normal': 5, 'ansioso': 7, 'muito_ansioso': 9 };
+      const anxiety = moodMap[entry.mood] || 0;
+
       return {
         date: `${d}/${m}`,
         fullDate: date,
         olhos: entry.morningEyes || 0,
         face: entry.morningFace || 0,
+        neck: ((entry.morningNeck || 0) + (entry.afternoonNeck || 0) + (entry.eveningNeck || 0)) / 3 || 0,
         olhosTarde: entry.afternoonEyes || 0,
         faceTarde: entry.afternoonFace || 0,
         olhosNoite: entry.eveningEyes || 0,
@@ -2329,8 +2359,11 @@ const MeigeTracker = () => {
         falaTarde: speechMap[entry.afternoonSpeech] ?? null,
         comerTarde: eatingMap[entry.afternoonEating] ?? null,
         choro: entry.cryingEpisodes || 0,
+        anxiety,
         daysSinceBtx,
         totalMedPills,
+        clonazepam,
+        valdoxan,
         avgSymptoms: ((entry.morningEyes || 0) + (entry.morningFace || 0) + (entry.afternoonEyes || 0) + (entry.afternoonFace || 0) + (entry.eveningEyes || 0) + (entry.eveningFace || 0)) / 6,
         sono: entry.bedTime && entry.wakeTime ? (() => {
           const [bedH, bedM] = entry.bedTime.split(':').map(Number);
@@ -2388,10 +2421,10 @@ const MeigeTracker = () => {
           </div>
         ) : (
           <>
-            {/* Correlation Chart: Blefarospasmo vs Distonia Oromandibular */}
+            {/* Correlation Chart: Blefarospasmo vs Distonia Oromandibular vs Cervical */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-2">Correlação Temporal: Blefarospasmo vs Distonia Oromandibular</h3>
-              <p className="text-sm text-slate-400 mb-4">Análise de covariância entre sintomas oculares e mandibulares. Curvas paralelas indicam correlação positiva.</p>
+              <h3 className="font-semibold text-slate-100 mb-2">Correlação Temporal: Blefarospasmo, Oromandibular e Cervical</h3>
+              <p className="text-sm text-slate-400 mb-4">Análise de covariância entre os três tipos de distonia. Curvas paralelas indicam correlação positiva.</p>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={timeSeriesData}>
@@ -2405,48 +2438,53 @@ const MeigeTracker = () => {
                     <Legend />
                     <Line type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} />
                     <Line type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="choro" name="Episódios de Choro" stroke="#ec4899" strokeWidth={1} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="neck" name="Distonia Cervical" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Daily Symptom Totals - Stacked Bar Chart */}
-            <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-2">Totais de Sintomas por Dia</h3>
-              <p className="text-sm text-slate-400 mb-4">Total diário de severidade. Barras mais altas indicam dias piores.</p>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={timeSeriesData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                    <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Total Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                    <Legend />
-                    <Bar dataKey="olhos" name="Olhos" stackId="a" fill="#0ea5e9" />
-                    <Bar dataKey="face" name="Face" stackId="a" fill="#f59e0b" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Medication vs Symptoms Correlation */}
-            {timeSeriesData.some(d => d.totalMedPills > 0) && (
+            {/* Medication vs Symptoms Correlation - Split by medication */}
+            {timeSeriesData.some(d => d.clonazepam > 0 || d.valdoxan > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
                 <h3 className="font-semibold text-slate-100 mb-2">Correlação Medicação vs Sintomas</h3>
-                <p className="text-sm text-slate-400 mb-4">Relação entre dose total diária e cada sintoma individual.</p>
+                <p className="text-sm text-slate-400 mb-4">Relação entre cada medicamento e a severidade dos sintomas principais.</p>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={timeSeriesData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                       <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
                       <YAxis yAxisId="symptoms" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Sintomas (0-10)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                      <YAxis yAxisId="meds" orientation="right" domain={[0, 20]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Comprimidos', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
+                      <YAxis yAxisId="meds" orientation="right" domain={[0, 10]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Dose (mg/gotas)', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend />
                       <Line yAxisId="symptoms" type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
                       <Line yAxisId="symptoms" type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
-                      <Line yAxisId="meds" type="monotone" dataKey="totalMedPills" name="Total Medicação" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line yAxisId="meds" type="monotone" dataKey="clonazepam" name="Clonazepam (mg)" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 5" />
+                      <Line yAxisId="meds" type="monotone" dataKey="valdoxan" name="Valdoxan (gotas)" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 5" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Antidepressant vs Mood Correlation */}
+            {timeSeriesData.some(d => d.valdoxan > 0) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-2">Antidepressivo vs Humor e Choro Fácil</h3>
+                <p className="text-sm text-slate-400 mb-4">Correlação entre Valdoxan e sintomas do humor (ansiedade, choro fácil).</p>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={timeSeriesData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="mood" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Escala (0-10)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                      <YAxis yAxisId="meds" orientation="right" domain={[0, 30]} stroke="#a855f7" tick={{ fontSize: 12 }} label={{ value: 'Gotas', angle: 90, position: 'insideRight', fill: '#a855f7', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Legend />
+                      <Line yAxisId="mood" type="monotone" dataKey="anxiety" name="Ansiedade" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line yAxisId="mood" type="monotone" dataKey="choro" name="Choro Fácil" stroke="#ec4899" strokeWidth={2} dot={{ r: 3 }} />
+                      <Line yAxisId="meds" type="monotone" dataKey="valdoxan" name="Valdoxan (gotas)" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 5" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -2502,52 +2540,30 @@ const MeigeTracker = () => {
               </div>
             </div>
 
-            {/* Botulinum Toxin Efficacy Decay Curve */}
-            {botoxRecords.length > 0 && timeSeriesData.some(d => d.daysSinceBtx !== null) && (
-              <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-2">Curva de Eficácia da Toxina Botulínica</h3>
-                <p className="text-sm text-slate-400 mb-4">Severidade dos sintomas em função do tempo pós-injecção. Identifica o período de eficácia terapêutica.</p>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeSeriesData.filter(d => d.daysSinceBtx !== null)}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="daysSinceBtx" stroke="#94a3b8" tick={{ fontSize: 10 }} label={{ value: 'Dias pós-injecção', position: 'bottom', fill: '#94a3b8', fontSize: 11 }} />
-                      <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
-                        labelFormatter={(label) => `Dia ${label} pós-injecção`}
-                      />
-                      <Legend />
-                      <Line type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} />
-                      <Line type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
             {/* Sleep-Dystonia Correlation */}
-            {timeSeriesData.some(d => d.sono !== null) && (
-              <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-2">Correlação Sono-Distonia</h3>
-                <p className="text-sm text-slate-400 mb-4">Relação entre duração do sono e severidade dos sintomas. Privação de sono pode exacerbar distonia.</p>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeSeriesData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="symptoms" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                      <YAxis yAxisId="sleep" orientation="right" domain={[0, 12]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Horas', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                      <Legend />
-                      <Line yAxisId="symptoms" type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
-                      <Line yAxisId="symptoms" type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
-                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Duração do Sono (h)" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-                    </LineChart>
-                  </ResponsiveContainer>
+            {
+              timeSeriesData.some(d => d.sono !== null) && (
+                <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                  <h3 className="font-semibold text-slate-100 mb-2">Correlação Sono-Distonia</h3>
+                  <p className="text-sm text-slate-400 mb-4">Relação entre duração do sono e severidade dos sintomas. Privação de sono pode exacerbar distonia.</p>
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={timeSeriesData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                        <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                        <YAxis yAxisId="symptoms" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                        <YAxis yAxisId="sleep" orientation="right" domain={[0, 12]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Horas', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
+                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                        <Legend />
+                        <Line yAxisId="symptoms" type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                        <Line yAxisId="symptoms" type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
+                        <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Duração do Sono (h)" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            }
             <div className="bg-slate-800 rounded-xl p-5">
               <h3 className="font-semibold text-slate-100 mb-4">Últimos registos ({filteredDates.length} dias)</h3>
               {filteredDates.slice(-7).reverse().map(date => {
@@ -2570,7 +2586,7 @@ const MeigeTracker = () => {
             </div>
           </>
         )}
-      </div>
+      </div >
     );
   };
 
