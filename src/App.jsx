@@ -2507,7 +2507,7 @@ const MeigeTracker = () => {
         {/* Methods Legend (collapsible) */}
         <details className="bg-slate-800 rounded-xl p-4 mb-4">
           <summary className="cursor-pointer text-sm font-medium text-slate-300 hover:text-white">
-            📊 Metodologia e Definições
+            Metodologia e Definições
           </summary>
           <div className="mt-3 text-xs text-slate-400 space-y-2">
             <div><strong className="text-slate-300">Épocas temporais:</strong> Acordar (0-30min), Manhã (08-12h), Tarde (12-18h), Noite (18h+)</div>
