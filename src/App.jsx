@@ -79,7 +79,7 @@ const MeigeTracker = () => {
       }
     },
     {
-      id: 3, name: 'Sertralina (gotas)', dosePerPill: '', unit: 'gotas', doseDisplay: '60 gotas/dia', category: 'Síndrome de Meige', times: {
+      id: 3, name: 'Sertralina (gotas)', dosePerPill: '', unit: 'gotas', concentration: '20 mg/mL', doseDisplay: '60 gotas/dia', category: 'Síndrome de Meige', times: {
         pequeno_almoco: { qty: 60, hour: '08:00', timing: 'depois' }
       }
     },
@@ -1151,9 +1151,12 @@ const MeigeTracker = () => {
               <div key={med.id} className="bg-slate-700 rounded-lg p-4 mb-3">
                 <div className="mb-3">
                   <span className="font-medium text-slate-200">{med.name}</span>
-                  {med.dosePerPill && (
+                  {med.concentration && (
+                    <span className="text-sm text-sky-400 ml-2">({med.concentration})</span>
+                  )}
+                  {med.dosePerPill && !med.concentration && (
                     <span className="text-sm text-slate-400 ml-2">
-                      ({med.dosePerPill} {med.unit} por {med.unit === 'gotas' ? 'gota' : 'comprimido'})
+                      ({med.dosePerPill} {med.unit} por comprimido)
                     </span>
                   )}
                 </div>
@@ -1594,6 +1597,22 @@ const MeigeTracker = () => {
               </div>
             </div>
 
+            {/* Concentration field for liquids */}
+            <div className="mb-4">
+              <label className="block text-xs text-slate-400 mb-1">Concentração (para líquidos, ex: 20 mg/mL)</label>
+              <input
+                type="text"
+                value={med.concentration || ''}
+                onChange={(e) => {
+                  const newMeds = [...medications];
+                  newMeds[idx].concentration = e.target.value;
+                  setMedications(newMeds);
+                }}
+                className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
+                placeholder="Ex: 20 mg/mL"
+              />
+            </div>
+
             <button
               onClick={() => setMedications(medications.filter((_, i) => i !== idx))}
               className="text-sm text-red-400 hover:text-red-300"
@@ -1609,6 +1628,7 @@ const MeigeTracker = () => {
             name: '',
             dosePerPill: '',
             unit: 'mg',
+            concentration: '',
             times: {}
           }])}
           className="w-full py-3 border-2 border-dashed border-slate-600 rounded-xl text-slate-400 hover:border-sky-500 hover:text-sky-400 mb-4"
