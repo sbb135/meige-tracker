@@ -1906,7 +1906,17 @@ const MeigeTracker = () => {
                         Limpar consulta
                       </button>
                     )}
-
+                    <button
+                      onClick={() => {
+                        if (confirm(`Remover ${m.nome} da lista de médicos?`)) {
+                          setMedicos(medicos.filter(doc => doc.id !== m.id));
+                          setEditingDoctorId(null);
+                        }
+                      }}
+                      className="w-full py-1 text-red-400 text-xs hover:text-red-300"
+                    >
+                      Remover médico
+                    </button>
                   </div>
                 ) : (
                   <>
