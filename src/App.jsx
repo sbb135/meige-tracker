@@ -1565,7 +1565,7 @@ const MeigeTracker = () => {
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Dose por comprimido</label>
+                <label className="block text-xs text-slate-400 mb-1">Dose</label>
                 <input
                   type="text"
                   value={med.dosePerPill}
