@@ -40,7 +40,7 @@ const MeigeTracker = () => {
   ]);
   const [showAddDoctor, setShowAddDoctor] = useState(false);
   const [editingDoctorId, setEditingDoctorId] = useState(null);
-  const [newDoctor, setNewDoctor] = useState({ nome: '', especialidade: 'Neurologista', local: '', notas: '', proximaConsulta: '' });
+  const [newDoctor, setNewDoctor] = useState({ nome: '', especialidade: '', local: '', notas: '', proximaConsulta: '', color: 'sky' });
   const [consultasCalendarMonth, setConsultasCalendarMonth] = useState(new Date());
 
   // Consultas
@@ -1658,8 +1658,8 @@ const MeigeTracker = () => {
     const getAppointmentsForDate = (dateStr) => {
       const appointments = [];
       medicos.forEach(m => {
-        if (m.proximaConsulta === dateStr) appointments.push({ tipo: m.especialidade, nome: m.nome, isUpcoming: true });
-        if (m.ultimaConsulta === dateStr) appointments.push({ tipo: m.especialidade, nome: m.nome, isUpcoming: false });
+        if (m.proximaConsulta === dateStr) appointments.push({ tipo: m.especialidade, nome: m.nome, isUpcoming: true, color: m.color, hora: m.proximaHora });
+        if (m.ultimaConsulta === dateStr) appointments.push({ tipo: m.especialidade, nome: m.nome, isUpcoming: false, color: m.color });
       });
       consultas.forEach(c => {
         if (c.date === dateStr) appointments.push({ tipo: c.tipo, nome: c.medico, isUpcoming: new Date(c.date) >= new Date() });
@@ -1699,33 +1699,47 @@ const MeigeTracker = () => {
       const appointments = getAppointmentsForDate(dateStr);
       const isToday = dateStr === new Date().toISOString().split('T')[0];
       const hasAppointment = appointments.length > 0;
-      const bgColor = hasAppointment ? getCellBgColor(appointments[0].tipo) : 'bg-slate-700';
+      // Use custom color if available, otherwise fallback to specialty-based color
+      const getCustomColor = (appt) => {
+        if (appt.color) {
+          const colorMap = {
+            purple: 'bg-purple-700/60', indigo: 'bg-indigo-700/60', teal: 'bg-teal-700/60',
+            green: 'bg-green-700/60', sky: 'bg-sky-700/60', amber: 'bg-amber-700/60',
+            rose: 'bg-rose-700/60', orange: 'bg-orange-700/60'
+          };
+          return colorMap[appt.color] || 'bg-sky-700/60';
+        }
+        return getCellBgColor(appt.tipo);
+      };
+      const getCustomBadgeColor = (appt) => {
+        if (appt.color) {
+          const colorMap = {
+            purple: 'bg-purple-500', indigo: 'bg-indigo-500', teal: 'bg-teal-500',
+            green: 'bg-green-500', sky: 'bg-sky-500', amber: 'bg-amber-500',
+            rose: 'bg-rose-500', orange: 'bg-orange-500'
+          };
+          return colorMap[appt.color] || 'bg-sky-500';
+        }
+        return getBadgeColor(appt.tipo);
+      };
+      const bgColor = hasAppointment ? getCustomColor(appointments[0]) : 'bg-slate-700';
 
       days.push(
         <div
           key={day}
           onClick={() => handleCalendarCellClick(dateStr, appointments)}
           className={`relative h-16 rounded-lg flex flex-col items-center justify-center text-sm transition-all
-            ${hasAppointment ? bgColor : 'bg-slate-700'}
+            ${bgColor}
             ${isToday ? 'ring-2 ring-sky-300' : ''}
             ${hasAppointment ? 'cursor-pointer hover:opacity-80 shadow-lg' : 'hover:bg-slate-600'}`}
-          title={appointments.map(a => `${a.tipo}: ${a.nome}`).join('\n')}
+          title={appointments.map(a => `${a.tipo}: ${a.nome}${a.hora ? ' às ' + a.hora : ''}`).join('\n')}
         >
           <span className={`text-base ${isToday ? 'text-sky-300 font-bold' : hasAppointment ? 'text-white font-bold' : 'text-slate-300'}`}>
             {day}
           </span>
           {hasAppointment && (
-            <span className={`mt-0.5 text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${appointments[0].tipo === 'Neurologista' ? 'bg-purple-500 text-white' :
-              appointments[0].tipo === 'Psiquiatra' ? 'bg-indigo-500 text-white' :
-                appointments[0].tipo.includes('Endo') ? 'bg-teal-500 text-white' :
-                  appointments[0].tipo.includes('Família') ? 'bg-green-500 text-white' :
-                    'bg-sky-500 text-white'
-              }`}>
-              {appointments[0].tipo === 'Neurologista' ? 'Neurologia' :
-                appointments[0].tipo === 'Psiquiatra' ? 'Psiquiatria' :
-                  appointments[0].tipo.includes('Endo') ? 'Endocrinologia' :
-                    appointments[0].tipo.includes('Família') ? 'Família' :
-                      appointments[0].tipo}
+            <span className={`mt-0.5 text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${getCustomBadgeColor(appointments[0])} text-white`}>
+              {appointments[0].tipo}
             </span>
           )}
         </div>
@@ -1791,9 +1805,9 @@ const MeigeTracker = () => {
       .sort((a, b) => new Date(a.proximaConsulta) - new Date(b.proximaConsulta));
 
     // Handle updating a doctor's próxima consulta
-    const updateDoctorAppointment = (doctorId, newDate) => {
+    const updateDoctorAppointment = (doctorId, newDate, newTime) => {
       setMedicos(medicos.map(m =>
-        m.id === doctorId ? { ...m, proximaConsulta: newDate } : m
+        m.id === doctorId ? { ...m, proximaConsulta: newDate, proximaHora: newTime } : m
       ));
       setEditingDoctorId(null);
     };
@@ -1830,16 +1844,26 @@ const MeigeTracker = () => {
                 {editingDoctorId === m.id ? (
                   <div className="mt-3 p-3 bg-slate-600 rounded">
                     <label className="block text-xs text-slate-400 mb-1">Próxima Consulta</label>
-                    <input
-                      type="date"
-                      defaultValue={m.proximaConsulta}
-                      className="w-full p-2 rounded bg-slate-700 text-slate-100 text-sm border border-slate-500 mb-2"
-                      id={`edit-date-${m.id}`}
-                    />
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <input
+                        type="date"
+                        defaultValue={m.proximaConsulta}
+                        className="p-2 rounded bg-slate-700 text-slate-100 text-sm border border-slate-500"
+                        id={`edit-date-${m.id}`}
+                      />
+                      <input
+                        type="time"
+                        defaultValue={m.proximaHora || ''}
+                        className="p-2 rounded bg-slate-700 text-slate-100 text-sm border border-slate-500"
+                        id={`edit-time-${m.id}`}
+                        placeholder="Hora"
+                      />
+                    </div>
                     <button
                       onClick={() => {
                         const newDate = document.getElementById(`edit-date-${m.id}`).value;
-                        updateDoctorAppointment(m.id, newDate);
+                        const newTime = document.getElementById(`edit-time-${m.id}`).value;
+                        updateDoctorAppointment(m.id, newDate, newTime);
                       }}
                       className="w-full py-2 bg-sky-600 text-white rounded text-sm font-medium hover:bg-sky-500 mb-2"
                     >
@@ -1861,7 +1885,7 @@ const MeigeTracker = () => {
                   <>
                     {m.proximaConsulta && (
                       <p className="text-sm text-sky-400">
-                        Próxima: {formatDatePT(m.proximaConsulta)}
+                        Próxima: {formatDatePT(m.proximaConsulta)}{m.proximaHora ? ` às ${m.proximaHora}` : ''}
                       </p>
                     )}
                     {m.ultimaConsulta && !m.proximaConsulta && (
@@ -1894,13 +1918,13 @@ const MeigeTracker = () => {
                   onChange={(e) => setNewDoctor({ ...newDoctor, nome: e.target.value })}
                   className="p-2 rounded bg-slate-600 text-slate-100 text-sm border border-slate-500"
                 />
-                <select
+                <input
+                  type="text"
+                  placeholder="Especialidade (ex: Dentista)"
                   value={newDoctor.especialidade}
                   onChange={(e) => setNewDoctor({ ...newDoctor, especialidade: e.target.value })}
                   className="p-2 rounded bg-slate-600 text-slate-100 text-sm border border-slate-500"
-                >
-                  {tiposConsulta.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
+                />
               </div>
               <input
                 type="text"
@@ -1909,12 +1933,35 @@ const MeigeTracker = () => {
                 onChange={(e) => setNewDoctor({ ...newDoctor, local: e.target.value })}
                 className="w-full p-2 rounded bg-slate-600 text-slate-100 text-sm border border-slate-500 mb-3"
               />
+              {/* Color Picker */}
+              <div className="mb-3">
+                <label className="block text-xs text-slate-400 mb-2">Cor do badge</label>
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { name: 'purple', label: 'Roxo', bg: 'bg-purple-500' },
+                    { name: 'indigo', label: 'Índigo', bg: 'bg-indigo-500' },
+                    { name: 'teal', label: 'Verde-azul', bg: 'bg-teal-500' },
+                    { name: 'green', label: 'Verde', bg: 'bg-green-500' },
+                    { name: 'sky', label: 'Azul', bg: 'bg-sky-500' },
+                    { name: 'amber', label: 'Âmbar', bg: 'bg-amber-500' },
+                    { name: 'rose', label: 'Rosa', bg: 'bg-rose-500' },
+                    { name: 'orange', label: 'Laranja', bg: 'bg-orange-500' },
+                  ].map(c => (
+                    <button
+                      key={c.name}
+                      onClick={() => setNewDoctor({ ...newDoctor, color: c.name })}
+                      className={`w-8 h-8 rounded-full ${c.bg} ${newDoctor.color === c.name ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-700' : ''}`}
+                      title={c.label}
+                    />
+                  ))}
+                </div>
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    if (newDoctor.nome && newDoctor.local) {
+                    if (newDoctor.nome && newDoctor.especialidade && newDoctor.local) {
                       setMedicos([...medicos, { ...newDoctor, id: Date.now() }]);
-                      setNewDoctor({ nome: '', especialidade: 'Neurologista', local: '', notas: '', proximaConsulta: '' });
+                      setNewDoctor({ nome: '', especialidade: '', local: '', notas: '', proximaConsulta: '', color: 'sky' });
                       setShowAddDoctor(false);
                     }
                   }}
