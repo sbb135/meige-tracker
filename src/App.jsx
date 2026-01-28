@@ -52,33 +52,40 @@ const MeigeTracker = () => {
     proximaConsulta: ''
   });
 
+  // Categorias de medicação
+  const medicationCategories = {
+    'Síndrome de Meige': { color: 'bg-purple-600', label: 'Síndrome de Meige' },
+    'Tiroide': { color: 'bg-teal-600', label: 'Regulação da Tiroide' },
+    'Colesterol': { color: 'bg-amber-600', label: 'Colesterol' }
+  };
+
   // Medicamentos - Updated based on Rosa Brites' prescription
   const [medications, setMedications] = useState([
     {
-      id: 1, name: 'Artane® (trihexifenidil)', dosePerPill: '2', unit: 'mg', purpose: 'Síndrome de Meige', times: {
+      id: 1, name: 'Artane® (trihexifenidil)', dosePerPill: '2', unit: 'mg', category: 'Síndrome de Meige', times: {
         pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' },
         almoco: { qty: 1, hour: '13:00', timing: 'depois' }
       }
     },
     {
-      id: 2, name: 'Rivotril® (clonazepam)', dosePerPill: '0,5', unit: 'mg', purpose: 'Síndrome de Meige', times: {
+      id: 2, name: 'Rivotril® (clonazepam)', dosePerPill: '0,5', unit: 'mg', category: 'Síndrome de Meige', times: {
         pequeno_almoco: { qty: 0.5, hour: '08:00', timing: 'depois' },
         almoco: { qty: 1, hour: '13:00', timing: 'depois' },
         deitar: { qty: 3, hour: '22:00', timing: 'antes' }
       }
     },
     {
-      id: 3, name: 'Sertralina', dosePerPill: '60', unit: 'gotas', purpose: 'Síndrome de Meige', times: {
-        pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' }
+      id: 3, name: 'Sertralina (gotas)', dosePerPill: '', unit: 'gotas', doseDisplay: '60 gotas/dia', category: 'Síndrome de Meige', times: {
+        pequeno_almoco: { qty: 60, hour: '08:00', timing: 'depois' }
       }
     },
     {
-      id: 4, name: 'Metibasol® (tiamazol)', dosePerPill: '5', unit: 'mg', purpose: 'Tiroide', times: {
+      id: 4, name: 'Metibasol® (tiamazol)', dosePerPill: '5', unit: 'mg', category: 'Tiroide', times: {
         almoco: { qty: 1, hour: '13:00', timing: 'depois' }
       }
     },
     {
-      id: 5, name: 'Atorvastatina', dosePerPill: '20', unit: 'mg', purpose: 'Colesterol', times: {
+      id: 5, name: 'Atorvastatina', dosePerPill: '20', unit: 'mg', category: 'Colesterol', times: {
         deitar: { qty: 1, hour: '22:00', timing: 'antes' }
       }
     },
@@ -591,6 +598,9 @@ const MeigeTracker = () => {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const hasEntry = entries[dateStr];
       const hasBotox = botoxRecords.some(b => b.date === dateStr);
+      const hasAppointment = consultas.some(c => c.date === dateStr);
+      const isUpcomingAppointment = consultas.some(c => c.date === dateStr && new Date(c.date) >= new Date(new Date().toISOString().split('T')[0]));
+      const appointmentOnDay = consultas.find(c => c.date === dateStr);
       const isSelected = dateStr === selectedDate;
       const isToday = dateStr === new Date().toISOString().split('T')[0];
 
@@ -621,7 +631,12 @@ const MeigeTracker = () => {
             {day}
           </span>
           {hasBotox && (
-            <span className="absolute bottom-1 right-1 text-xs text-sky-300">BTX</span>
+            <span className="absolute bottom-1 right-1 text-xs text-sky-300 font-medium">BTX</span>
+          )}
+          {hasAppointment && !hasBotox && (
+            <span className={`absolute bottom-1 right-1 text-xs font-medium ${isUpcomingAppointment ? 'text-green-400' : 'text-purple-400'}`} title={appointmentOnDay?.tipo}>
+              {appointmentOnDay?.tipo?.substring(0, 3).toUpperCase() || 'CON'}
+            </span>
           )}
           {hasEntry && (
             <span className="absolute top-1 right-1 w-2 h-2 bg-sky-400 rounded-full"></span>
@@ -1643,9 +1658,7 @@ const MeigeTracker = () => {
 
         {/* Doctor Directory */}
         <div className="bg-slate-800 rounded-xl p-5 mb-6">
-          <h3 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
-            <span>👨‍⚕️</span> Médicos
-          </h3>
+          <h3 className="text-lg font-semibold text-slate-100 mb-4">Médicos</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {medicos.map(m => (
               <div key={m.id} className="bg-slate-700 rounded-lg p-4 border-l-4 border-sky-500">
@@ -1729,9 +1742,7 @@ const MeigeTracker = () => {
         {/* Upcoming Appointments */}
         {allUpcoming.length > 0 && (
           <div className="bg-slate-800 rounded-xl p-5 mb-4">
-            <h3 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
-              <span>📅</span> Próximas Consultas
-            </h3>
+            <h3 className="text-lg font-semibold text-slate-100 mb-4">Próximas Consultas</h3>
             {allUpcoming.map((c, idx) => (
               <div key={c.id || idx} className={`rounded-lg p-3 mb-2 border-l-4 ${getSpecialtyColor(c.tipo)} bg-slate-700`}>
                 <div className="flex justify-between items-center">
@@ -1750,9 +1761,7 @@ const MeigeTracker = () => {
         {/* History */}
         {consultas.length > 0 && (
           <div className="bg-slate-800 rounded-xl p-5">
-            <h3 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
-              <span>📋</span> Histórico
-            </h3>
+            <h3 className="text-lg font-semibold text-slate-100 mb-4">Histórico de Consultas</h3>
             {[...consultas].sort((a, b) => new Date(b.date) - new Date(a.date)).map(c => (
               <div key={c.id} className={`rounded-lg p-4 mb-3 border-l-4 ${getSpecialtyColor(c.tipo)} bg-slate-700`}>
                 <div className="flex justify-between items-start mb-2">
