@@ -1167,7 +1167,7 @@ const MeigeTracker = () => {
                     const isActive = periodData?.active !== false && periodData !== undefined;
 
                     const handleToggle = () => {
-                      const newMeds = { ...dayEntry.medicationsTaken };
+                      const newMeds = JSON.parse(JSON.stringify(dayEntry.medicationsTaken || {}));
                       if (!newMeds[med.id]) newMeds[med.id] = {};
                       if (!newMeds[med.id][period.id]) {
                         newMeds[med.id][period.id] = {
@@ -1213,7 +1213,7 @@ const MeigeTracker = () => {
                               <select
                                 value={periodData?.hour || period.defaultHour}
                                 onChange={(e) => {
-                                  const newMeds = { ...dayEntry.medicationsTaken };
+                                  const newMeds = JSON.parse(JSON.stringify(dayEntry.medicationsTaken || {}));
                                   if (!newMeds[med.id]) newMeds[med.id] = {};
                                   if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'depois' };
                                   newMeds[med.id][period.id].hour = e.target.value;
@@ -1233,7 +1233,7 @@ const MeigeTracker = () => {
                                 step="0.5"
                                 value={periodData?.qty ?? 1}
                                 onChange={(e) => {
-                                  const newMeds = { ...dayEntry.medicationsTaken };
+                                  const newMeds = JSON.parse(JSON.stringify(dayEntry.medicationsTaken || {}));
                                   if (!newMeds[med.id]) newMeds[med.id] = {};
                                   if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'depois' };
                                   newMeds[med.id][period.id].qty = parseFloat(e.target.value) || 0;
@@ -1245,7 +1245,7 @@ const MeigeTracker = () => {
                             <div className="flex gap-1">
                               <button
                                 onClick={() => {
-                                  const newMeds = { ...dayEntry.medicationsTaken };
+                                  const newMeds = JSON.parse(JSON.stringify(dayEntry.medicationsTaken || {}));
                                   if (!newMeds[med.id]) newMeds[med.id] = {};
                                   if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'antes' };
                                   else newMeds[med.id][period.id].timing = 'antes';
@@ -1260,7 +1260,7 @@ const MeigeTracker = () => {
                               </button>
                               <button
                                 onClick={() => {
-                                  const newMeds = { ...dayEntry.medicationsTaken };
+                                  const newMeds = JSON.parse(JSON.stringify(dayEntry.medicationsTaken || {}));
                                   if (!newMeds[med.id]) newMeds[med.id] = {};
                                   if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'depois' };
                                   else newMeds[med.id][period.id].timing = 'depois';
