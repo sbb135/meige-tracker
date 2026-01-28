@@ -1552,29 +1552,14 @@ const MeigeTracker = () => {
               />
             </div>
 
-            {/* Category/Purpose selector */}
-            <div className="mb-4">
-              <label className="block text-xs text-slate-400 mb-1">Indicação terapêutica</label>
-              <select
-                value={med.category || ''}
-                onChange={(e) => {
-                  const newMeds = [...medications];
-                  newMeds[idx].category = e.target.value;
-                  setMedications(newMeds);
-                }}
-                className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
-              >
-                <option value="">Selecionar...</option>
-                {Object.entries(medicationCategories).map(([key, val]) => (
-                  <option key={key} value={key}>{val.label}</option>
-                ))}
-              </select>
-              {med.category && (
-                <span className={`inline-block mt-2 text-xs px-2 py-1 rounded-full ${medicationCategories[med.category]?.color || 'bg-slate-600'} text-white`}>
+            {/* Category/Purpose - static display */}
+            {med.category && (
+              <div className="mb-3">
+                <span className={`inline-block text-xs px-2 py-1 rounded-full ${medicationCategories[med.category]?.color || 'bg-slate-600'} text-white`}>
                   {medicationCategories[med.category]?.label || med.category}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
