@@ -39,6 +39,7 @@ const MeigeTracker = () => {
     { id: 4, nome: 'Teresa Antunes', especialidade: 'Médica de Família', local: 'Centro de Saúde', ultimaConsulta: '2025-12-13', proximaConsulta: '', notas: '' },
   ]);
   const [showAddDoctor, setShowAddDoctor] = useState(false);
+  const [editingDoctorId, setEditingDoctorId] = useState(null);
   const [newDoctor, setNewDoctor] = useState({ nome: '', especialidade: 'Neurologista', local: '', notas: '', proximaConsulta: '' });
   const [consultasCalendarMonth, setConsultasCalendarMonth] = useState(new Date());
 
@@ -1665,27 +1666,53 @@ const MeigeTracker = () => {
     const days = [];
     // Empty cells for days before the 1st
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-10"></div>);
+      days.push(<div key={`empty-${i}`} className="h-12"></div>);
     }
+
+    // Handle clicking on an appointment cell
+    const handleCalendarCellClick = (dateStr, appointments) => {
+      if (appointments.length > 0) {
+        // Find the doctor for this appointment and open edit mode
+        const appt = appointments[0];
+        const doctor = medicos.find(m => m.proximaConsulta === dateStr || m.ultimaConsulta === dateStr);
+        if (doctor) {
+          setEditingDoctorId(doctor.id);
+        }
+      }
+    };
+
+    // Get cell background color by specialty
+    const getCellBgColor = (tipo) => {
+      const colors = {
+        'Neurologista': 'bg-purple-700/60', 'Psiquiatra': 'bg-indigo-700/60', 'Endocrinologista': 'bg-teal-700/60',
+        'Médica de família': 'bg-green-700/60', 'Médica de Família': 'bg-green-700/60', 'Análise Genética': 'bg-amber-700/60',
+      };
+      return colors[tipo] || 'bg-sky-700/60';
+    };
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const appointments = getAppointmentsForDate(dateStr);
       const isToday = dateStr === new Date().toISOString().split('T')[0];
+      const hasAppointment = appointments.length > 0;
+      const bgColor = hasAppointment ? getCellBgColor(appointments[0].tipo) : 'bg-slate-700';
 
       days.push(
         <div
           key={day}
-          className={`relative h-10 rounded flex items-center justify-center text-sm cursor-pointer transition-all
-            ${appointments.length > 0 ? 'bg-slate-600 ring-2 ring-sky-400' : 'bg-slate-700'}
-            ${isToday ? 'ring-2 ring-sky-300 text-sky-300 font-bold' : 'text-slate-300'}
-            hover:bg-slate-600`}
+          onClick={() => handleCalendarCellClick(dateStr, appointments)}
+          className={`relative h-12 rounded flex flex-col items-center justify-center text-sm transition-all
+            ${bgColor}
+            ${isToday ? 'ring-2 ring-sky-300' : ''}
+            ${hasAppointment ? 'cursor-pointer hover:opacity-80 ring-1 ring-white/30' : 'hover:bg-slate-600'}`}
           title={appointments.map(a => `${a.tipo}: ${a.nome}`).join('\n')}
         >
-          {day}
-          {appointments.length > 0 && (
-            <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] text-white flex items-center justify-center ${getBadgeColor(appointments[0].tipo)}`}>
-              {appointments.length}
+          <span className={`${isToday ? 'text-sky-300 font-bold' : hasAppointment ? 'text-white font-medium' : 'text-slate-300'}`}>
+            {day}
+          </span>
+          {hasAppointment && (
+            <span className="text-[10px] text-white/80 truncate max-w-full px-1">
+              {appointments[0].tipo.substring(0, 4)}
             </span>
           )}
         </div>
@@ -1750,6 +1777,14 @@ const MeigeTracker = () => {
     const allUpcoming = [...upcomingFromMedicos, ...upcomingFromConsultas]
       .sort((a, b) => new Date(a.proximaConsulta) - new Date(b.proximaConsulta));
 
+    // Handle updating a doctor's próxima consulta
+    const updateDoctorAppointment = (doctorId, newDate) => {
+      setMedicos(medicos.map(m =>
+        m.id === doctorId ? { ...m, proximaConsulta: newDate } : m
+      ));
+      setEditingDoctorId(null);
+    };
+
     return (
       <div className="max-w-2xl mx-auto">
         <h2 className="text-xl font-semibold text-slate-100 mb-6">Consultas e Médicos</h2>
@@ -1759,7 +1794,10 @@ const MeigeTracker = () => {
           <h3 className="text-lg font-semibold text-slate-100 mb-4">Médicos</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {medicos.map(m => (
-              <div key={m.id} className="bg-slate-700 rounded-lg p-4 border-l-4 border-sky-500">
+              <div
+                key={m.id}
+                className={`bg-slate-700 rounded-lg p-4 border-l-4 transition-all ${editingDoctorId === m.id ? 'border-sky-400 ring-2 ring-sky-400/50' : 'border-sky-500'}`}
+              >
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-medium text-slate-100">{m.nome}</p>
@@ -1767,17 +1805,47 @@ const MeigeTracker = () => {
                       {m.especialidade}
                     </p>
                   </div>
+                  <button
+                    onClick={() => setEditingDoctorId(editingDoctorId === m.id ? null : m.id)}
+                    className="text-xs text-sky-400 hover:text-sky-300"
+                  >
+                    {editingDoctorId === m.id ? '✕' : '✎'}
+                  </button>
                 </div>
                 <p className="text-sm text-slate-400 mb-2">{m.local}</p>
-                {m.proximaConsulta && (
-                  <p className="text-sm text-sky-400">
-                    Próxima: {formatDatePT(m.proximaConsulta)}
-                  </p>
-                )}
-                {m.ultimaConsulta && !m.proximaConsulta && (
-                  <p className="text-xs text-slate-500">
-                    Última: {formatDatePT(m.ultimaConsulta)}
-                  </p>
+
+                {editingDoctorId === m.id ? (
+                  <div className="mt-3 p-3 bg-slate-600 rounded">
+                    <label className="block text-xs text-slate-400 mb-1">Próxima Consulta</label>
+                    <input
+                      type="date"
+                      defaultValue={m.proximaConsulta}
+                      className="w-full p-2 rounded bg-slate-700 text-slate-100 text-sm border border-slate-500 mb-2"
+                      id={`edit-date-${m.id}`}
+                    />
+                    <button
+                      onClick={() => {
+                        const newDate = document.getElementById(`edit-date-${m.id}`).value;
+                        updateDoctorAppointment(m.id, newDate);
+                      }}
+                      className="w-full py-2 bg-sky-600 text-white rounded text-sm font-medium hover:bg-sky-500"
+                    >
+                      Guardar
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {m.proximaConsulta && (
+                      <p className="text-sm text-sky-400">
+                        Próxima: {formatDatePT(m.proximaConsulta)}
+                      </p>
+                    )}
+                    {m.ultimaConsulta && !m.proximaConsulta && (
+                      <p className="text-xs text-slate-500">
+                        Última: {formatDatePT(m.ultimaConsulta)}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             ))}
