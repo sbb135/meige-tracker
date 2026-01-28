@@ -31,13 +31,16 @@ const MeigeTracker = () => {
   // Tipos de consulta
   const tiposConsulta = ['Neurologista', 'Psiquiatra', 'Endocrinologista', 'Médica de família', 'Análise Genética', 'Dentista', 'Oftalmologista', 'Fisioterapeuta', 'Outro'];
 
-  // Directório de Médicos - Rosa Brites
-  const medicos = [
+  // Directório de Médicos - Rosa Brites (now editable)
+  const [medicos, setMedicos] = useState([
     { id: 1, nome: 'Dr. João Lourenço', especialidade: 'Neurologista', local: 'Hospital S. José', ultimaConsulta: '2025-12-19', proximaConsulta: '2026-03-06', notas: 'Botox, Síndrome de Meige' },
     { id: 2, nome: 'Dr. Hugo da Silva', especialidade: 'Psiquiatra', local: 'Hospital Capuchos', ultimaConsulta: '2026-01-13', proximaConsulta: '2026-02-24', notas: 'Avaliação medicação, Sertralina' },
     { id: 3, nome: 'Dr. Vara Luís', especialidade: 'Endocrinologista', local: 'Hospital de Setúbal', ultimaConsulta: '2025-10-28', proximaConsulta: '', notas: 'Tiroide' },
     { id: 4, nome: 'Teresa Antunes', especialidade: 'Médica de Família', local: 'Centro de Saúde', ultimaConsulta: '2025-12-13', proximaConsulta: '', notas: '' },
-  ];
+  ]);
+  const [showAddDoctor, setShowAddDoctor] = useState(false);
+  const [newDoctor, setNewDoctor] = useState({ nome: '', especialidade: 'Neurologista', local: '', notas: '', proximaConsulta: '' });
+  const [consultasCalendarMonth, setConsultasCalendarMonth] = useState(new Date());
 
   // Consultas
   const [consultas, setConsultas] = useState([]);
@@ -1629,6 +1632,90 @@ const MeigeTracker = () => {
     );
   };
 
+  // Mini calendar for Consultas section - shows appointments visually
+  const renderConsultasCalendar = () => {
+    const year = consultasCalendarMonth.getFullYear();
+    const month = consultasCalendarMonth.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+    // Get specialty color for calendar badges
+    const getBadgeColor = (tipo) => {
+      const colors = {
+        'Neurologista': 'bg-purple-500', 'Psiquiatra': 'bg-indigo-500', 'Endocrinologista': 'bg-teal-500',
+        'Médica de família': 'bg-green-500', 'Médica de Família': 'bg-green-500', 'Análise Genética': 'bg-amber-500',
+      };
+      return colors[tipo] || 'bg-sky-500';
+    };
+
+    // Collect all appointment dates from medicos and consultas
+    const getAppointmentsForDate = (dateStr) => {
+      const appointments = [];
+      medicos.forEach(m => {
+        if (m.proximaConsulta === dateStr) appointments.push({ tipo: m.especialidade, nome: m.nome, isUpcoming: true });
+        if (m.ultimaConsulta === dateStr) appointments.push({ tipo: m.especialidade, nome: m.nome, isUpcoming: false });
+      });
+      consultas.forEach(c => {
+        if (c.date === dateStr) appointments.push({ tipo: c.tipo, nome: c.medico, isUpcoming: new Date(c.date) >= new Date() });
+      });
+      return appointments;
+    };
+
+    const days = [];
+    // Empty cells for days before the 1st
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="h-10"></div>);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const appointments = getAppointmentsForDate(dateStr);
+      const isToday = dateStr === new Date().toISOString().split('T')[0];
+
+      days.push(
+        <div
+          key={day}
+          className={`relative h-10 rounded flex items-center justify-center text-sm cursor-pointer transition-all
+            ${appointments.length > 0 ? 'bg-slate-600 ring-2 ring-sky-400' : 'bg-slate-700'}
+            ${isToday ? 'ring-2 ring-sky-300 text-sky-300 font-bold' : 'text-slate-300'}
+            hover:bg-slate-600`}
+          title={appointments.map(a => `${a.tipo}: ${a.nome}`).join('\n')}
+        >
+          {day}
+          {appointments.length > 0 && (
+            <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[10px] text-white flex items-center justify-center ${getBadgeColor(appointments[0].tipo)}`}>
+              {appointments.length}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-3">
+          <button onClick={() => setConsultasCalendarMonth(new Date(year, month - 1))} className="text-slate-400 hover:text-white px-2">◀</button>
+          <span className="text-slate-200 font-medium">{monthNames[month]} {year}</span>
+          <button onClick={() => setConsultasCalendarMonth(new Date(year, month + 1))} className="text-slate-400 hover:text-white px-2">▶</button>
+        </div>
+        <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-500 mb-1">
+          <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {days}
+        </div>
+        {/* Legend */}
+        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-purple-500"></span> Neuro</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-indigo-500"></span> Psiq</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-teal-500"></span> Endo</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500"></span> Família</span>
+        </div>
+      </div>
+    );
+  };
+
   // Secção Consultas
   const renderConsultas = () => {
     // Get specialty color
@@ -1695,6 +1782,69 @@ const MeigeTracker = () => {
               </div>
             ))}
           </div>
+
+          {/* Add Doctor Button/Form */}
+          {!showAddDoctor ? (
+            <button
+              onClick={() => setShowAddDoctor(true)}
+              className="w-full mt-4 py-2 bg-slate-700 text-sky-400 font-medium rounded-lg hover:bg-slate-600 border border-slate-600"
+            >
+              + Adicionar médico
+            </button>
+          ) : (
+            <div className="mt-4 p-4 bg-slate-700 rounded-lg border border-slate-600">
+              <h4 className="text-sm font-semibold text-slate-100 mb-3">Novo Médico</h4>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <input
+                  type="text"
+                  placeholder="Nome"
+                  value={newDoctor.nome}
+                  onChange={(e) => setNewDoctor({ ...newDoctor, nome: e.target.value })}
+                  className="p-2 rounded bg-slate-600 text-slate-100 text-sm border border-slate-500"
+                />
+                <select
+                  value={newDoctor.especialidade}
+                  onChange={(e) => setNewDoctor({ ...newDoctor, especialidade: e.target.value })}
+                  className="p-2 rounded bg-slate-600 text-slate-100 text-sm border border-slate-500"
+                >
+                  {tiposConsulta.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <input
+                type="text"
+                placeholder="Local/Hospital"
+                value={newDoctor.local}
+                onChange={(e) => setNewDoctor({ ...newDoctor, local: e.target.value })}
+                className="w-full p-2 rounded bg-slate-600 text-slate-100 text-sm border border-slate-500 mb-3"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (newDoctor.nome && newDoctor.local) {
+                      setMedicos([...medicos, { ...newDoctor, id: Date.now() }]);
+                      setNewDoctor({ nome: '', especialidade: 'Neurologista', local: '', notas: '', proximaConsulta: '' });
+                      setShowAddDoctor(false);
+                    }
+                  }}
+                  className="flex-1 py-2 bg-sky-600 text-white rounded font-medium hover:bg-sky-500"
+                >
+                  Guardar
+                </button>
+                <button
+                  onClick={() => setShowAddDoctor(false)}
+                  className="flex-1 py-2 bg-slate-600 text-slate-300 rounded font-medium hover:bg-slate-500"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Appointment Calendar */}
+        <div className="bg-slate-800 rounded-xl p-5 mb-6">
+          <h3 className="text-lg font-semibold text-slate-100 mb-4">Calendário de Consultas</h3>
+          {renderConsultasCalendar()}
         </div>
 
         {/* New Appointment Button */}
