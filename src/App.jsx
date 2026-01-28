@@ -29,7 +29,15 @@ const MeigeTracker = () => {
   ];
 
   // Tipos de consulta
-  const tiposConsulta = ['Neurologista', 'Médica de família', 'Dentista', 'Oftalmologista', 'Fisioterapeuta', 'Psicólogo', 'Outro'];
+  const tiposConsulta = ['Neurologista', 'Psiquiatra', 'Endocrinologista', 'Médica de família', 'Análise Genética', 'Dentista', 'Oftalmologista', 'Fisioterapeuta', 'Outro'];
+
+  // Directório de Médicos - Rosa Brites
+  const medicos = [
+    { id: 1, nome: 'Dr. João Lourenço', especialidade: 'Neurologista', local: 'Hospital S. José', ultimaConsulta: '2025-12-19', proximaConsulta: '2026-03-06', notas: 'Botox, Síndrome de Meige' },
+    { id: 2, nome: 'Dr. Hugo da Silva', especialidade: 'Psiquiatra', local: 'Hospital Capuchos', ultimaConsulta: '2026-01-13', proximaConsulta: '2026-02-24', notas: 'Avaliação medicação, Sertralina' },
+    { id: 3, nome: 'Dr. Vara Luís', especialidade: 'Endocrinologista', local: 'Hospital de Setúbal', ultimaConsulta: '2025-10-28', proximaConsulta: '', notas: 'Tiroide' },
+    { id: 4, nome: 'Teresa Antunes', especialidade: 'Médica de Família', local: 'Centro de Saúde', ultimaConsulta: '2025-12-13', proximaConsulta: '', notas: '' },
+  ];
 
   // Consultas
   const [consultas, setConsultas] = useState([]);
@@ -44,28 +52,33 @@ const MeigeTracker = () => {
     proximaConsulta: ''
   });
 
-  // Medicamentos
+  // Medicamentos - Updated based on Rosa Brites' prescription
   const [medications, setMedications] = useState([
     {
-      id: 1, name: 'Rivotril® (clonazepam)', dosePerPill: '0,5', unit: 'mg', times: {
+      id: 1, name: 'Artane® (trihexifenidil)', dosePerPill: '2', unit: 'mg', purpose: 'Síndrome de Meige', times: {
         pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' },
-        lanche: { qty: 1.5, hour: '16:00', timing: 'depois' },
-        deitar: { qty: 3, hour: '22:30', timing: 'antes' }
-      }
-    },
-    {
-      id: 2, name: 'Artane® (trihexifenidil)', dosePerPill: '2', unit: 'mg', times: {
-        pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' },
-        lanche: { qty: 1, hour: '16:00', timing: 'depois' }
-      }
-    },
-    {
-      id: 3, name: 'Metibasol® (tiamazol)', dosePerPill: '5', unit: 'mg', times: {
         almoco: { qty: 1, hour: '13:00', timing: 'depois' }
       }
     },
     {
-      id: 4, name: 'Medicação para o colesterol', dosePerPill: '', unit: 'mg', times: {
+      id: 2, name: 'Rivotril® (clonazepam)', dosePerPill: '0,5', unit: 'mg', purpose: 'Síndrome de Meige', times: {
+        pequeno_almoco: { qty: 0.5, hour: '08:00', timing: 'depois' },
+        almoco: { qty: 1, hour: '13:00', timing: 'depois' },
+        deitar: { qty: 3, hour: '22:00', timing: 'antes' }
+      }
+    },
+    {
+      id: 3, name: 'Sertralina', dosePerPill: '60', unit: 'gotas', purpose: 'Síndrome de Meige', times: {
+        pequeno_almoco: { qty: 1, hour: '08:00', timing: 'depois' }
+      }
+    },
+    {
+      id: 4, name: 'Metibasol® (tiamazol)', dosePerPill: '5', unit: 'mg', purpose: 'Tiroide', times: {
+        almoco: { qty: 1, hour: '13:00', timing: 'depois' }
+      }
+    },
+    {
+      id: 5, name: 'Atorvastatina', dosePerPill: '20', unit: 'mg', purpose: 'Colesterol', times: {
         deitar: { qty: 1, hour: '22:00', timing: 'antes' }
       }
     },
@@ -296,34 +309,38 @@ const MeigeTracker = () => {
         // Copy from previous day
         defaultMeds = JSON.parse(JSON.stringify(entries[previousDate].medicationsTaken));
       } else {
-        // First time setup with defaults
+        // First time setup with defaults based on Rosa Brites' prescription
+        // Artane: 1 manhã, 1 tarde
         // Rivotril: 0.5 manhã, 1 tarde, 3 noite
-        // Artane: 1, 1, 1
+        // Sertralina: 60 gotas manhã
         // Metibasol: 1 tarde
-        // Colesterol: 1 noite
+        // Atorvastatina: 1 noite
         medications.forEach(med => {
           const name = med.name.toLowerCase();
           defaultMeds[med.id] = {};
 
-          if (name.includes('rivotril')) {
+          if (name.includes('artane')) {
             defaultMeds[med.id] = {
-              manha: { active: true, hour: '10', qty: 0.5, timing: 'depois' },
-              tarde: { active: true, hour: '14', qty: 1, timing: 'depois' },
-              noite: { active: true, hour: '22', qty: 3, timing: 'depois' }
+              manha: { active: true, hour: '08', qty: 1, timing: 'depois' },
+              tarde: { active: true, hour: '13', qty: 1, timing: 'depois' }
             };
-          } else if (name.includes('artane')) {
+          } else if (name.includes('rivotril')) {
             defaultMeds[med.id] = {
-              manha: { active: true, hour: '10', qty: 1, timing: 'depois' },
-              tarde: { active: true, hour: '14', qty: 1, timing: 'depois' },
-              noite: { active: true, hour: '22', qty: 1, timing: 'depois' }
+              manha: { active: true, hour: '08', qty: 0.5, timing: 'depois' },
+              tarde: { active: true, hour: '13', qty: 1, timing: 'depois' },
+              noite: { active: true, hour: '22', qty: 3, timing: 'antes' }
+            };
+          } else if (name.includes('sertralina')) {
+            defaultMeds[med.id] = {
+              manha: { active: true, hour: '08', qty: 1, timing: 'depois' }
             };
           } else if (name.includes('metibasol')) {
             defaultMeds[med.id] = {
-              tarde: { active: true, hour: '14', qty: 1, timing: 'depois' }
+              tarde: { active: true, hour: '13', qty: 1, timing: 'depois' }
             };
-          } else if (name.includes('colesterol')) {
+          } else if (name.includes('atorvastatina')) {
             defaultMeds[med.id] = {
-              noite: { active: true, hour: '22', qty: 1, timing: 'depois' }
+              noite: { active: true, hour: '22', qty: 1, timing: 'antes' }
             };
           }
         });
@@ -1587,112 +1604,196 @@ const MeigeTracker = () => {
   };
 
   // Secção Consultas
-  const renderConsultas = () => (
-    <div className="max-w-xl mx-auto">
-      <h2 className="text-xl font-semibold text-slate-100 mb-6">Consultas</h2>
+  const renderConsultas = () => {
+    // Get specialty color
+    const getSpecialtyColor = (tipo) => {
+      const colors = {
+        'Neurologista': 'bg-purple-600',
+        'Psiquiatra': 'bg-indigo-600',
+        'Endocrinologista': 'bg-teal-600',
+        'Médica de família': 'bg-green-600',
+        'Médica de Família': 'bg-green-600',
+        'Análise Genética': 'bg-amber-600',
+      };
+      return colors[tipo] || 'bg-slate-600';
+    };
 
-      {!showConsultaForm ? (
-        <button onClick={() => setShowConsultaForm(true)} className="w-full py-4 bg-sky-600 text-white font-semibold rounded-xl hover:bg-sky-500 mb-6">
-          Registar nova consulta
-        </button>
-      ) : (
+    // Combine medicos próximas with database consultas próximas
+    const upcomingFromMedicos = medicos
+      .filter(m => m.proximaConsulta && new Date(m.proximaConsulta) >= new Date())
+      .map(m => ({
+        id: `med-${m.id}`,
+        tipo: m.especialidade,
+        proximaConsulta: m.proximaConsulta,
+        medico: m.nome,
+        clinica: m.local,
+        fromDirectory: true
+      }));
+
+    const upcomingFromConsultas = consultas
+      .filter(c => c.proximaConsulta && new Date(c.proximaConsulta) >= new Date());
+
+    // Merge and dedupe by date+tipo
+    const allUpcoming = [...upcomingFromMedicos, ...upcomingFromConsultas]
+      .sort((a, b) => new Date(a.proximaConsulta) - new Date(b.proximaConsulta));
+
+    return (
+      <div className="max-w-2xl mx-auto">
+        <h2 className="text-xl font-semibold text-slate-100 mb-6">Consultas e Médicos</h2>
+
+        {/* Doctor Directory */}
         <div className="bg-slate-800 rounded-xl p-5 mb-6">
-          <h3 className="text-lg font-semibold text-slate-100 mb-4">Nova consulta</h3>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Data</label>
-              <input type="date" value={newConsulta.date} onChange={(e) => setNewConsulta({ ...newConsulta, date: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Tipo</label>
-              <select value={newConsulta.tipo} onChange={(e) => setNewConsulta({ ...newConsulta, tipo: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100">
-                {tiposConsulta.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Médico</label>
-              <input type="text" value={newConsulta.medico} onChange={(e) => setNewConsulta({ ...newConsulta, medico: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
-            </div>
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Clínica</label>
-              <input type="text" value={newConsulta.clinica} onChange={(e) => setNewConsulta({ ...newConsulta, clinica: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
-            </div>
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm text-slate-400 mb-1">Motivo</label>
-            <input type="text" value={newConsulta.motivo} onChange={(e) => setNewConsulta({ ...newConsulta, motivo: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" placeholder="Revisão, ajuste medicação, dores..." />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm text-slate-400 mb-1">Notas</label>
-            <textarea value={newConsulta.notas} onChange={(e) => setNewConsulta({ ...newConsulta, notas: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" rows={3} />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm text-slate-400 mb-1">Próxima consulta</label>
-            <input type="date" value={newConsulta.proximaConsulta} onChange={(e) => setNewConsulta({ ...newConsulta, proximaConsulta: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
-          </div>
-          <div className="flex gap-3">
-            <button onClick={() => setShowConsultaForm(false)} className="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl">Cancelar</button>
-            <button onClick={saveConsulta} className="flex-1 py-3 bg-sky-600 text-white rounded-xl">Guardar</button>
-          </div>
-        </div>
-      )}
-
-      {consultas.filter(c => c.proximaConsulta && new Date(c.proximaConsulta) >= new Date()).length > 0 && (
-        <div className="bg-slate-800 rounded-xl p-5 mb-4">
-          <h3 className="text-lg font-semibold text-slate-100 mb-4">Próximas consultas</h3>
-          {consultas.filter(c => c.proximaConsulta && new Date(c.proximaConsulta) >= new Date()).sort((a, b) => new Date(a.proximaConsulta) - new Date(b.proximaConsulta)).map(c => (
-            <div key={c.id + '-prox'} className="bg-slate-700 rounded-lg p-3 mb-2">
-              <div className="flex justify-between"><span className="text-slate-200">{c.tipo}</span><span className="text-sky-400">{formatDatePT(c.proximaConsulta)}</span></div>
-              {c.medico && <p className="text-sm text-slate-400">{c.medico}</p>}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {consultas.length > 0 && (
-        <div className="bg-slate-800 rounded-xl p-5">
-          <h3 className="text-lg font-semibold text-slate-100 mb-4">Histórico</h3>
-          {[...consultas].sort((a, b) => new Date(b.date) - new Date(a.date)).map(c => (
-            <div key={c.id} className="bg-slate-700 rounded-lg p-4 mb-3">
-              <div className="flex justify-between items-start mb-2">
-                <div><span className="text-slate-200 font-medium">{c.tipo}</span><span className="text-slate-400 text-sm ml-2">{formatDatePT(c.date)}</span></div>
-                <div className="flex gap-2">
-                  <button onClick={() => {
-                    setNewConsulta({
-                      date: c.date,
-                      tipo: c.tipo,
-                      medico: c.medico || '',
-                      clinica: c.clinica || '',
-                      motivo: c.motivo || '',
-                      notas: c.notas || '',
-                      proximaConsulta: c.proximaConsulta || ''
-                    });
-                    setEditingConsultaId(c.id);
-                    setShowConsultaForm(true);
-                  }} className="text-sky-400 text-sm">Editar</button>
-                  <button onClick={async () => {
-                    const { error } = await supabase.from('appointments').delete().eq('id', c.id);
-                    if (error) {
-                      alert('❌ Erro ao eliminar: ' + error.message);
-                    } else {
-                      setConsultas(consultas.filter(x => x.id !== c.id));
-                      alert('✅ Consulta eliminada!');
-                    }
-                  }} className="text-red-400 text-sm">Remover</button>
+          <h3 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
+            <span>👨‍⚕️</span> Médicos
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {medicos.map(m => (
+              <div key={m.id} className="bg-slate-700 rounded-lg p-4 border-l-4 border-sky-500">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-medium text-slate-100">{m.nome}</p>
+                    <p className={`text-xs px-2 py-0.5 rounded-full inline-block mt-1 ${getSpecialtyColor(m.especialidade)} text-white`}>
+                      {m.especialidade}
+                    </p>
+                  </div>
                 </div>
+                <p className="text-sm text-slate-400 mb-2">{m.local}</p>
+                {m.proximaConsulta && (
+                  <p className="text-sm text-sky-400">
+                    Próxima: {formatDatePT(m.proximaConsulta)}
+                  </p>
+                )}
+                {m.ultimaConsulta && !m.proximaConsulta && (
+                  <p className="text-xs text-slate-500">
+                    Última: {formatDatePT(m.ultimaConsulta)}
+                  </p>
+                )}
               </div>
-              {c.medico && <p className="text-sm text-slate-400">Médico: {c.medico}</p>}
-              {c.clinica && <p className="text-sm text-slate-400">Local: {c.clinica}</p>}
-              {c.motivo && <p className="text-sm text-slate-400">Motivo: {c.motivo}</p>}
-              {c.notas && <p className="text-sm text-slate-300 mt-2 italic">{c.notas}</p>}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      )}
-    </div>
-  );
+
+        {/* New Appointment Button */}
+        {!showConsultaForm ? (
+          <button onClick={() => setShowConsultaForm(true)} className="w-full py-4 bg-sky-600 text-white font-semibold rounded-xl hover:bg-sky-500 mb-6">
+            + Registar nova consulta
+          </button>
+        ) : (
+          <div className="bg-slate-800 rounded-xl p-5 mb-6">
+            <h3 className="text-lg font-semibold text-slate-100 mb-4">
+              {editingConsultaId ? 'Editar consulta' : 'Nova consulta'}
+            </h3>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Data</label>
+                <input type="date" value={newConsulta.date} onChange={(e) => setNewConsulta({ ...newConsulta, date: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Tipo</label>
+                <select value={newConsulta.tipo} onChange={(e) => setNewConsulta({ ...newConsulta, tipo: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100">
+                  {tiposConsulta.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Médico</label>
+                <input type="text" value={newConsulta.medico} onChange={(e) => setNewConsulta({ ...newConsulta, medico: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" list="medicos-list" />
+                <datalist id="medicos-list">
+                  {medicos.map(m => <option key={m.id} value={m.nome} />)}
+                </datalist>
+              </div>
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Local</label>
+                <input type="text" value={newConsulta.clinica} onChange={(e) => setNewConsulta({ ...newConsulta, clinica: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" list="locais-list" />
+                <datalist id="locais-list">
+                  {[...new Set(medicos.map(m => m.local))].map(l => <option key={l} value={l} />)}
+                </datalist>
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm text-slate-400 mb-1">Notas</label>
+              <textarea value={newConsulta.notas} onChange={(e) => setNewConsulta({ ...newConsulta, notas: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" rows={2} placeholder="Motivo, resultado, próximos passos..." />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm text-slate-400 mb-1">Próxima consulta</label>
+              <input type="date" value={newConsulta.proximaConsulta} onChange={(e) => setNewConsulta({ ...newConsulta, proximaConsulta: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setShowConsultaForm(false); setEditingConsultaId(null); }} className="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl">Cancelar</button>
+              <button onClick={saveConsulta} className="flex-1 py-3 bg-sky-600 text-white rounded-xl">Guardar</button>
+            </div>
+          </div>
+        )}
+
+        {/* Upcoming Appointments */}
+        {allUpcoming.length > 0 && (
+          <div className="bg-slate-800 rounded-xl p-5 mb-4">
+            <h3 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
+              <span>📅</span> Próximas Consultas
+            </h3>
+            {allUpcoming.map((c, idx) => (
+              <div key={c.id || idx} className={`rounded-lg p-3 mb-2 border-l-4 ${getSpecialtyColor(c.tipo)} bg-slate-700`}>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-sky-400 font-medium">{formatDatePT(c.proximaConsulta)}</span>
+                    <span className="text-slate-400 mx-2">•</span>
+                    <span className="text-slate-200">{c.tipo}</span>
+                  </div>
+                </div>
+                {c.medico && <p className="text-sm text-slate-400 mt-1">{c.medico} • {c.clinica}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* History */}
+        {consultas.length > 0 && (
+          <div className="bg-slate-800 rounded-xl p-5">
+            <h3 className="text-lg font-semibold text-slate-100 mb-4 flex items-center gap-2">
+              <span>📋</span> Histórico
+            </h3>
+            {[...consultas].sort((a, b) => new Date(b.date) - new Date(a.date)).map(c => (
+              <div key={c.id} className={`rounded-lg p-4 mb-3 border-l-4 ${getSpecialtyColor(c.tipo)} bg-slate-700`}>
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <span className="text-slate-200 font-medium">{c.tipo}</span>
+                    <span className="text-slate-400 text-sm ml-2">{formatDatePT(c.date)}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => {
+                      setNewConsulta({
+                        date: c.date,
+                        tipo: c.tipo,
+                        medico: c.medico || '',
+                        clinica: c.clinica || '',
+                        motivo: c.motivo || '',
+                        notas: c.notas || '',
+                        proximaConsulta: c.proximaConsulta || ''
+                      });
+                      setEditingConsultaId(c.id);
+                      setShowConsultaForm(true);
+                    }} className="text-sky-400 text-sm hover:underline">Editar</button>
+                    <button onClick={async () => {
+                      const { error } = await supabase.from('appointments').delete().eq('id', c.id);
+                      if (error) {
+                        alert('❌ Erro ao eliminar: ' + error.message);
+                      } else {
+                        setConsultas(consultas.filter(x => x.id !== c.id));
+                        alert('✅ Consulta eliminada!');
+                      }
+                    }} className="text-red-400 text-sm hover:underline">Remover</button>
+                  </div>
+                </div>
+                {c.medico && <p className="text-sm text-slate-400">{c.medico} • {c.clinica}</p>}
+                {c.notas && <p className="text-sm text-slate-300 mt-2 italic">{c.notas}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // Secção Botox
   const renderBotoxSection = () => (
