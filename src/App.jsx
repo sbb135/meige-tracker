@@ -1715,13 +1715,17 @@ const MeigeTracker = () => {
             {day}
           </span>
           {hasAppointment && (
-            <span className={`mt-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${appointments[0].tipo === 'Neurologista' ? 'bg-purple-500 text-white' :
+            <span className={`mt-0.5 text-[8px] px-1.5 py-0.5 rounded-full font-semibold ${appointments[0].tipo === 'Neurologista' ? 'bg-purple-500 text-white' :
               appointments[0].tipo === 'Psiquiatra' ? 'bg-indigo-500 text-white' :
                 appointments[0].tipo.includes('Endo') ? 'bg-teal-500 text-white' :
                   appointments[0].tipo.includes('Família') ? 'bg-green-500 text-white' :
                     'bg-sky-500 text-white'
               }`}>
-              {appointments[0].tipo.substring(0, 5)}
+              {appointments[0].tipo === 'Neurologista' ? 'Neurologia' :
+                appointments[0].tipo === 'Psiquiatra' ? 'Psiquiatria' :
+                  appointments[0].tipo.includes('Endo') ? 'Endocrinologia' :
+                    appointments[0].tipo.includes('Família') ? 'Família' :
+                      appointments[0].tipo}
             </span>
           )}
         </div>
