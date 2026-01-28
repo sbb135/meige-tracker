@@ -1095,67 +1095,35 @@ const MeigeTracker = () => {
             Período bom
           </h3>
 
-          <CheckboxField
-            label="Houve algum período bom hoje?"
-            checked={dayEntry.hadGoodPeriod}
-            onChange={(v) => setDayEntry({ ...dayEntry, hadGoodPeriod: v })}
-          />
-
-          {dayEntry.hadGoodPeriod && (
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <SelectField
-                label="Período"
-                value={dayEntry.goodPeriodWhen}
-                onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodWhen: v })}
-                options={[
-                  { value: 'manha', label: 'Manhã' },
-                  { value: 'tarde', label: 'Tarde' },
-                  { value: 'tarde_sesta', label: 'Tarde depois da sesta' },
-                  { value: 'noite', label: 'Noite' },
-                ]}
-              />
-              <SelectField
-                label="Hora"
-                value={dayEntry.goodPeriodHour}
-                onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodHour: v })}
-                options={[
-                  { value: '06:00', label: '06:00' },
-                  { value: '06:30', label: '06:30' },
-                  { value: '07:00', label: '07:00' },
-                  { value: '07:30', label: '07:30' },
-                  { value: '08:00', label: '08:00' },
-                  { value: '08:30', label: '08:30' },
-                  { value: '09:00', label: '09:00' },
-                  { value: '09:30', label: '09:30' },
-                  { value: '10:00', label: '10:00' },
-                  { value: '10:30', label: '10:30' },
-                  { value: '11:00', label: '11:00' },
-                  { value: '11:30', label: '11:30' },
-                  { value: '12:00', label: '12:00' },
-                  { value: '12:30', label: '12:30' },
-                  { value: '13:00', label: '13:00' },
-                  { value: '13:30', label: '13:30' },
-                  { value: '14:00', label: '14:00' },
-                  { value: '14:30', label: '14:30' },
-                  { value: '15:00', label: '15:00' },
-                  { value: '15:30', label: '15:30' },
-                  { value: '16:00', label: '16:00' },
-                  { value: '16:30', label: '16:30' },
-                  { value: '17:00', label: '17:00' },
-                  { value: '17:30', label: '17:30' },
-                  { value: '18:00', label: '18:00' },
-                  { value: '18:30', label: '18:30' },
-                  { value: '19:00', label: '19:00' },
-                  { value: '19:30', label: '19:30' },
-                  { value: '20:00', label: '20:00' },
-                  { value: '20:30', label: '20:30' },
-                  { value: '21:00', label: '21:00' },
-                  { value: '21:30', label: '21:30' },
-                  { value: '22:00', label: '22:00' },
-                ]}
-              />
-            </div>
-          )}
+          <div className="grid grid-cols-2 gap-3">
+            <SelectField
+              label="Período"
+              value={dayEntry.goodPeriodWhen || ''}
+              onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodWhen: v, hadGoodPeriod: !!v })}
+              options={[
+                { value: '', label: '— Nenhum —' },
+                { value: 'manha', label: 'Manhã' },
+                { value: 'tarde', label: 'Tarde' },
+                { value: 'tarde_sesta', label: 'Tarde depois da sesta' },
+                { value: 'noite', label: 'Noite' },
+              ]}
+            />
+            <SelectField
+              label="Quantas horas"
+              value={dayEntry.goodPeriodDuration || ''}
+              onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodDuration: v })}
+              options={[
+                { value: '', label: '—' },
+                { value: '0.5', label: '30 min' },
+                { value: '1', label: '1 hora' },
+                { value: '1.5', label: '1h30' },
+                { value: '2', label: '2 horas' },
+                { value: '3', label: '3 horas' },
+                { value: '4', label: '4 horas' },
+                { value: '5', label: '5+ horas' },
+              ]}
+            />
+          </div>
         </section>
 
         {/* MEDICAÇÃO */}
