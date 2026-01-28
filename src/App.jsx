@@ -1878,6 +1878,21 @@ const MeigeTracker = () => {
                     >
                       Guardar
                     </button>
+                    {m.proximaConsulta && (
+                      <button
+                        onClick={() => {
+                          if (confirm('Limpar a data da próxima consulta?')) {
+                            setMedicos(medicos.map(doc =>
+                              doc.id === m.id ? { ...doc, proximaConsulta: '', proximaHora: '' } : doc
+                            ));
+                            setEditingDoctorId(null);
+                          }
+                        }}
+                        className="w-full py-2 bg-amber-600/20 text-amber-400 rounded text-sm font-medium hover:bg-amber-600/40 mb-2"
+                      >
+                        Limpar consulta
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         if (confirm(`Remover ${m.nome}?`)) {
