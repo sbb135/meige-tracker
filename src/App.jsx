@@ -598,9 +598,16 @@ const MeigeTracker = () => {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const hasEntry = entries[dateStr];
       const hasBotox = botoxRecords.some(b => b.date === dateStr);
-      const hasAppointment = consultas.some(c => c.date === dateStr);
-      const isUpcomingAppointment = consultas.some(c => c.date === dateStr && new Date(c.date) >= new Date(new Date().toISOString().split('T')[0]));
-      const appointmentOnDay = consultas.find(c => c.date === dateStr);
+
+      // Check for appointments from database
+      const dbAppointment = consultas.find(c => c.date === dateStr);
+      // Check for appointments from doctor directory (próxima consulta or ultima consulta)
+      const dirAppointment = medicos.find(m => m.proximaConsulta === dateStr || m.ultimaConsulta === dateStr);
+
+      const hasAppointment = dbAppointment || dirAppointment;
+      const appointmentType = dbAppointment?.tipo || dirAppointment?.especialidade;
+      const isUpcomingAppointment = new Date(dateStr) >= new Date(new Date().toISOString().split('T')[0]);
+
       const isSelected = dateStr === selectedDate;
       const isToday = dateStr === new Date().toISOString().split('T')[0];
 
@@ -634,8 +641,8 @@ const MeigeTracker = () => {
             <span className="absolute bottom-1 right-1 text-xs text-sky-300 font-medium">BTX</span>
           )}
           {hasAppointment && !hasBotox && (
-            <span className={`absolute bottom-1 right-1 text-xs font-medium ${isUpcomingAppointment ? 'text-green-400' : 'text-purple-400'}`} title={appointmentOnDay?.tipo}>
-              {appointmentOnDay?.tipo?.substring(0, 3).toUpperCase() || 'CON'}
+            <span className={`absolute bottom-1 right-1 text-xs font-medium ${isUpcomingAppointment ? 'text-green-400' : 'text-purple-400'}`} title={appointmentType}>
+              {appointmentType?.substring(0, 3).toUpperCase() || 'CON'}
             </span>
           )}
           {hasEntry && (
@@ -1530,7 +1537,7 @@ const MeigeTracker = () => {
 
         {medications.map((med, idx) => (
           <div key={med.id} className="bg-slate-800 rounded-xl p-5 mb-4">
-            <div className="mb-4">
+            <div className="mb-3">
               <label className="block text-xs text-slate-400 mb-1">Nome do medicamento</label>
               <input
                 type="text"
@@ -1543,6 +1550,30 @@ const MeigeTracker = () => {
                 className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
                 placeholder="Ex: Rivotril"
               />
+            </div>
+
+            {/* Category/Purpose selector */}
+            <div className="mb-4">
+              <label className="block text-xs text-slate-400 mb-1">Indicação terapêutica</label>
+              <select
+                value={med.category || ''}
+                onChange={(e) => {
+                  const newMeds = [...medications];
+                  newMeds[idx].category = e.target.value;
+                  setMedications(newMeds);
+                }}
+                className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
+              >
+                <option value="">Selecionar...</option>
+                {Object.entries(medicationCategories).map(([key, val]) => (
+                  <option key={key} value={key}>{val.label}</option>
+                ))}
+              </select>
+              {med.category && (
+                <span className={`inline-block mt-2 text-xs px-2 py-1 rounded-full ${medicationCategories[med.category]?.color || 'bg-slate-600'} text-white`}>
+                  {medicationCategories[med.category]?.label || med.category}
+                </span>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-4">
