@@ -2580,7 +2580,7 @@ const MeigeTracker = () => {
                   <LineChart data={circadianData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                     <XAxis dataKey="epoch" stroke="#94a3b8" tick={{ fontSize: 11 }} />
-                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'Intensidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'Intensidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
                     <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                     <Legend wrapperStyle={{ fontSize: '11px' }} />
                     <Line type="monotone" dataKey="eyes" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 4 }} />
@@ -2614,7 +2614,7 @@ const MeigeTracker = () => {
                   <LineChart data={timeSeriesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                     <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
                       formatter={(value, name) => [value.toFixed(2), name]}
@@ -2653,7 +2653,7 @@ const MeigeTracker = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                       <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
                       <YAxis yAxisId="sleep" domain={[0, 12]} stroke="#22d3ee" tick={{ fontSize: 11 }} label={{ value: 'Horas sono', angle: -90, position: 'insideLeft', fill: '#22d3ee', fontSize: 10 }} />
-                      <YAxis yAxisId="gdb" orientation="right" domain={[0, 10]} stroke="#a855f7" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: 90, position: 'insideRight', fill: '#a855f7', fontSize: 10 }} />
+                      <YAxis yAxisId="gdb" orientation="right" domain={[0, 4]} stroke="#a855f7" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: 90, position: 'insideRight', fill: '#a855f7', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
                       <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Sono (h)" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3 }} />
@@ -2674,7 +2674,7 @@ const MeigeTracker = () => {
                     <LineChart data={timeSeriesData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                       <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="gdb" domain={[0, 10]} stroke="#a855f7" tick={{ fontSize: 11 }} />
+                      <YAxis yAxisId="gdb" domain={[0, 4]} stroke="#a855f7" tick={{ fontSize: 11 }} />
                       <YAxis yAxisId="meds" orientation="right" stroke="#10b981" tick={{ fontSize: 11 }} label={{ value: 'Dose', angle: 90, position: 'insideRight', fill: '#10b981', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend wrapperStyle={{ fontSize: '11px' }} />
@@ -2696,7 +2696,7 @@ const MeigeTracker = () => {
                   <LineChart data={timeSeriesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                     <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade (0-10)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade (0-4)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
                       labelFormatter={(label) => `Data: ${label}`}
@@ -2720,8 +2720,8 @@ const MeigeTracker = () => {
                     <LineChart data={timeSeriesData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                       <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="symptoms" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Sintomas (0-10)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                      <YAxis yAxisId="meds" orientation="right" domain={[0, 10]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Dose (mg/gotas)', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
+                      <YAxis yAxisId="symptoms" domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Sintomas (0-4)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                      <YAxis yAxisId="meds" orientation="right" domain={[0, 4]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Dose (mg/gotas)', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend />
                       <Line yAxisId="symptoms" type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
@@ -2744,7 +2744,7 @@ const MeigeTracker = () => {
                     <LineChart data={timeSeriesData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                       <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="mood" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Escala (0-10)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                      <YAxis yAxisId="mood" domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Escala (0-4)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
                       <YAxis yAxisId="meds" orientation="right" domain={[0, 30]} stroke="#a855f7" tick={{ fontSize: 12 }} label={{ value: 'Gotas', angle: 90, position: 'insideRight', fill: '#a855f7', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend />
@@ -2766,7 +2766,7 @@ const MeigeTracker = () => {
                   <LineChart data={timeSeriesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                     <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
                       formatter={(value, name) => {
@@ -2795,7 +2795,7 @@ const MeigeTracker = () => {
                   <LineChart data={timeSeriesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                     <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
                     <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                     <Legend />
                     <Line type="monotone" dataKey="face" name="Manhã (pós-acordar)" stroke="#fbbf24" strokeWidth={2} dot={{ r: 2 }} />
