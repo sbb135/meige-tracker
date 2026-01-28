@@ -1660,7 +1660,7 @@ const MeigeTracker = () => {
     }
 
     // Handle clicking on an appointment cell
-    const handleCalendarCellClick = (dateStr, appointments) => {
+    const handleCalendarCellClick = async (dateStr, appointments) => {
       if (appointments.length > 0) {
         // Find the doctor for this appointment and open edit mode
         const doctor = medicos.find(m => m.proximaConsulta === dateStr || m.ultimaConsulta === dateStr);
@@ -1673,6 +1673,19 @@ const MeigeTracker = () => {
               doctorCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
           }, 100);
+        } else {
+          // Check if it's from consultas (orphaned appointment)
+          const consulta = consultas.find(c => c.date === dateStr);
+          if (consulta) {
+            const action = confirm(`Consulta: ${consulta.tipo}\n${formatDatePT(dateStr)}\n\nClique OK para remover esta consulta.`);
+            if (action) {
+              const { error } = await supabase.from('appointments').delete().eq('id', consulta.id);
+              if (!error) {
+                setConsultas(consultas.filter(c => c.id !== consulta.id));
+                alert('✅ Consulta removida!');
+              }
+            }
+          }
         }
       } else {
         // Empty cell - prompt to add a new doctor appointment
