@@ -1678,10 +1678,23 @@ const MeigeTracker = () => {
     const handleCalendarCellClick = (dateStr, appointments) => {
       if (appointments.length > 0) {
         // Find the doctor for this appointment and open edit mode
-        const appt = appointments[0];
         const doctor = medicos.find(m => m.proximaConsulta === dateStr || m.ultimaConsulta === dateStr);
         if (doctor) {
           setEditingDoctorId(doctor.id);
+          // Scroll to the doctor card
+          setTimeout(() => {
+            const doctorCard = document.getElementById(`doctor-card-${doctor.id}`);
+            if (doctorCard) {
+              doctorCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 100);
+        }
+      } else {
+        // Empty cell - prompt to add a new doctor appointment
+        const addNew = confirm(`Adicionar consulta para ${formatDatePT(dateStr)}?\n\nClique OK para adicionar um novo médico com esta data.`);
+        if (addNew) {
+          setShowAddDoctor(true);
+          setNewDoctor(prev => ({ ...prev, proximaConsulta: dateStr }));
         }
       }
     };
@@ -1824,6 +1837,7 @@ const MeigeTracker = () => {
             {medicos.map(m => (
               <div
                 key={m.id}
+                id={`doctor-card-${m.id}`}
                 className={`bg-slate-700 rounded-lg p-4 border-l-4 transition-all ${editingDoctorId === m.id ? 'border-sky-400 ring-2 ring-sky-400/50' : 'border-sky-500'}`}
               >
                 <div className="flex items-start justify-between mb-2">
@@ -2037,49 +2051,6 @@ const MeigeTracker = () => {
               <button onClick={() => { setShowConsultaForm(false); setEditingConsultaId(null); }} className="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl">Cancelar</button>
               <button onClick={saveConsulta} className="flex-1 py-3 bg-sky-600 text-white rounded-xl">Guardar</button>
             </div>
-          </div>
-        )}
-
-        {/* History */}
-        {consultas.length > 0 && (
-          <div className="bg-slate-800 rounded-xl p-5">
-            <h3 className="text-lg font-semibold text-slate-100 mb-4">Histórico de Consultas</h3>
-            {[...consultas].sort((a, b) => new Date(b.date) - new Date(a.date)).map(c => (
-              <div key={c.id} className={`rounded-lg p-4 mb-3 border-l-4 ${getSpecialtyColor(c.tipo)} bg-slate-700`}>
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <span className="text-slate-200 font-medium">{c.tipo}</span>
-                    <span className="text-slate-400 text-sm ml-2">{formatDatePT(c.date)}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => {
-                      setNewConsulta({
-                        date: c.date,
-                        tipo: c.tipo,
-                        medico: c.medico || '',
-                        clinica: c.clinica || '',
-                        motivo: c.motivo || '',
-                        notas: c.notas || '',
-                        proximaConsulta: c.proximaConsulta || ''
-                      });
-                      setEditingConsultaId(c.id);
-                      setShowConsultaForm(true);
-                    }} className="text-sky-400 text-sm hover:underline">Editar</button>
-                    <button onClick={async () => {
-                      const { error } = await supabase.from('appointments').delete().eq('id', c.id);
-                      if (error) {
-                        alert('❌ Erro ao eliminar: ' + error.message);
-                      } else {
-                        setConsultas(consultas.filter(x => x.id !== c.id));
-                        alert('✅ Consulta eliminada!');
-                      }
-                    }} className="text-red-400 text-sm hover:underline">Remover</button>
-                  </div>
-                </div>
-                {c.medico && <p className="text-sm text-slate-400">{c.medico} • {c.clinica}</p>}
-                {c.notas && <p className="text-sm text-slate-300 mt-2 italic">{c.notas}</p>}
-              </div>
-            ))}
           </div>
         )}
       </div>
