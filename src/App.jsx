@@ -1893,17 +1893,7 @@ const MeigeTracker = () => {
                         Limpar consulta
                       </button>
                     )}
-                    <button
-                      onClick={() => {
-                        if (confirm(`Remover ${m.nome}?`)) {
-                          setMedicos(medicos.filter(doc => doc.id !== m.id));
-                          setEditingDoctorId(null);
-                        }
-                      }}
-                      className="w-full py-2 bg-red-600/20 text-red-400 rounded text-sm font-medium hover:bg-red-600/40"
-                    >
-                      Remover médico
-                    </button>
+
                   </div>
                 ) : (
                   <>
@@ -2010,58 +2000,7 @@ const MeigeTracker = () => {
           {renderConsultasCalendar()}
         </div>
 
-        {/* New Appointment Button */}
-        {!showConsultaForm ? (
-          <button onClick={() => setShowConsultaForm(true)} className="w-full py-4 bg-sky-600 text-white font-semibold rounded-xl hover:bg-sky-500 mb-6">
-            + Registar nova consulta
-          </button>
-        ) : (
-          <div className="bg-slate-800 rounded-xl p-5 mb-6">
-            <h3 className="text-lg font-semibold text-slate-100 mb-4">
-              {editingConsultaId ? 'Editar consulta' : 'Nova consulta'}
-            </h3>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Data</label>
-                <input type="date" value={newConsulta.date} onChange={(e) => setNewConsulta({ ...newConsulta, date: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Tipo</label>
-                <select value={newConsulta.tipo} onChange={(e) => setNewConsulta({ ...newConsulta, tipo: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100">
-                  {tiposConsulta.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Médico</label>
-                <input type="text" value={newConsulta.medico} onChange={(e) => setNewConsulta({ ...newConsulta, medico: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" list="medicos-list" />
-                <datalist id="medicos-list">
-                  {medicos.map(m => <option key={m.id} value={m.nome} />)}
-                </datalist>
-              </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-1">Local</label>
-                <input type="text" value={newConsulta.clinica} onChange={(e) => setNewConsulta({ ...newConsulta, clinica: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" list="locais-list" />
-                <datalist id="locais-list">
-                  {[...new Set(medicos.map(m => m.local))].map(l => <option key={l} value={l} />)}
-                </datalist>
-              </div>
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm text-slate-400 mb-1">Notas</label>
-              <textarea value={newConsulta.notas} onChange={(e) => setNewConsulta({ ...newConsulta, notas: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" rows={2} placeholder="Motivo, resultado, próximos passos..." />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm text-slate-400 mb-1">Próxima consulta</label>
-              <input type="date" value={newConsulta.proximaConsulta} onChange={(e) => setNewConsulta({ ...newConsulta, proximaConsulta: e.target.value })} className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100" />
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => { setShowConsultaForm(false); setEditingConsultaId(null); }} className="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl">Cancelar</button>
-              <button onClick={saveConsulta} className="flex-1 py-3 bg-sky-600 text-white rounded-xl">Guardar</button>
-            </div>
-          </div>
-        )}
+
       </div>
     );
   };
