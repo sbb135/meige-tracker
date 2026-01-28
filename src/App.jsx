@@ -1187,38 +1187,69 @@ const MeigeTracker = () => {
         {/* PERÍODO BOM */}
         <section className="bg-slate-800 rounded-xl p-5 mb-4">
           <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
-            Período bom
+            Período bom hoje?
           </h3>
+          <p className="text-xs text-slate-500 mb-4">Houve algum período sem sintomas ou com sintomas mínimos?</p>
 
-          <div className="grid grid-cols-2 gap-3">
-            <SelectField
-              label="Período"
-              value={dayEntry.goodPeriodWhen || ''}
-              onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodWhen: v, hadGoodPeriod: !!v })}
-              options={[
-                { value: '', label: '— Nenhum —' },
-                { value: 'manha', label: 'Manhã' },
-                { value: 'tarde', label: 'Tarde' },
-                { value: 'tarde_sesta', label: 'Tarde depois da sesta' },
-                { value: 'noite', label: 'Noite' },
-              ]}
-            />
-            <SelectField
-              label="Quantas horas"
-              value={dayEntry.goodPeriodDuration || ''}
-              onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodDuration: v })}
-              options={[
-                { value: '', label: '—' },
-                { value: '0.5', label: '30 min' },
-                { value: '1', label: '1 hora' },
-                { value: '1.5', label: '1h30' },
-                { value: '2', label: '2 horas' },
-                { value: '3', label: '3 horas' },
-                { value: '4', label: '4 horas' },
-                { value: '5', label: '5+ horas' },
-              ]}
-            />
+          <div className="mb-4">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDayEntry({ ...dayEntry, hadGoodPeriod: false, goodPeriodWhen: '', goodPeriodDuration: '' })}
+                className={`px-6 py-3 rounded-lg font-medium ${!dayEntry.hadGoodPeriod ? 'bg-slate-600 text-white' : 'bg-slate-700 text-slate-400'}`}
+              >Não</button>
+              <button
+                onClick={() => setDayEntry({ ...dayEntry, hadGoodPeriod: true })}
+                className={`px-6 py-3 rounded-lg font-medium ${dayEntry.hadGoodPeriod ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400'}`}
+              >Sim</button>
+            </div>
           </div>
+
+          {dayEntry.hadGoodPeriod && (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm text-slate-400 mb-2">Quando?</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: 'manha', label: 'Manhã' },
+                    { value: 'tarde', label: 'Tarde' },
+                    { value: 'apos_sesta', label: 'Após sesta' },
+                    { value: 'noite', label: 'Noite' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setDayEntry({ ...dayEntry, goodPeriodWhen: opt.value })}
+                      className={`px-4 py-2 rounded-lg text-sm ${dayEntry.goodPeriodWhen === opt.value
+                        ? 'bg-sky-600 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        }`}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm text-slate-400 mb-2">Duração</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: '0.5', label: '30 min' },
+                    { value: '1', label: '1h' },
+                    { value: '2', label: '2h' },
+                    { value: '3', label: '3h' },
+                    { value: '4', label: '4h+' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setDayEntry({ ...dayEntry, goodPeriodDuration: opt.value })}
+                      className={`px-4 py-2 rounded-lg text-sm ${dayEntry.goodPeriodDuration === opt.value
+                        ? 'bg-sky-600 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        }`}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </section>
 
         {/* MEDICAÇÃO */}
