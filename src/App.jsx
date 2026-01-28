@@ -1742,10 +1742,10 @@ const MeigeTracker = () => {
           {days}
         </div>
         {/* Legend */}
-        <div className="mt-3 flex flex-wrap gap-2 text-xs">
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-purple-500"></span> Neuro</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-indigo-500"></span> Psiq</span>
-          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-teal-500"></span> Endo</span>
+        <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-300">
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-purple-500"></span> Neurologia</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-indigo-500"></span> Psiquiatria</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-teal-500"></span> Endocrinologia</span>
           <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500"></span> Família</span>
         </div>
       </div>
