@@ -1235,39 +1235,24 @@ const MeigeTracker = () => {
                                 className="w-14 p-1 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm text-center"
                               />
                             </div>
-                            <div className="flex gap-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs text-slate-400">Refeição</label>
+                              <select
+                                value={periodData?.timing || ''}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => {
                                   const newMeds = JSON.parse(JSON.stringify(dayEntry.medicationsTaken || {}));
                                   if (!newMeds[med.id]) newMeds[med.id] = {};
-                                  if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'antes' };
-                                  else newMeds[med.id][period.id].timing = 'antes';
+                                  if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: '' };
+                                  newMeds[med.id][period.id].timing = e.target.value;
                                   setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                                 }}
-                                className={`flex-1 px-2 py-1 rounded text-xs ${periodData?.timing === 'antes'
-                                  ? 'bg-sky-600 text-white'
-                                  : 'bg-slate-700 text-slate-300'
-                                  }`}
+                                className="flex-1 p-1 rounded bg-slate-700 text-slate-100 text-sm border border-slate-500"
                               >
-                                Antes refeição
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newMeds = JSON.parse(JSON.stringify(dayEntry.medicationsTaken || {}));
-                                  if (!newMeds[med.id]) newMeds[med.id] = {};
-                                  if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'depois' };
-                                  else newMeds[med.id][period.id].timing = 'depois';
-                                  setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
-                                }}
-                                className={`flex-1 px-2 py-1 rounded text-xs ${(periodData?.timing ?? 'depois') === 'depois'
-                                  ? 'bg-sky-600 text-white'
-                                  : 'bg-slate-700 text-slate-300'
-                                  }`}
-                              >
-                                Depois refeição
-                              </button>
+                                <option value="">—</option>
+                                <option value="antes">Antes</option>
+                                <option value="depois">Depois</option>
+                              </select>
                             </div>
                           </>
                         )}
