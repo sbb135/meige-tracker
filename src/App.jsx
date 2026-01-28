@@ -1185,24 +1185,19 @@ const MeigeTracker = () => {
                     return (
                       <div
                         key={period.id}
-                        className={`rounded-lg p-3 ${isActive ? 'bg-slate-600' : 'bg-slate-800 cursor-pointer hover:bg-slate-700'}`}
+                        onClick={() => { if (!isActive) handleToggle(); }}
+                        onDoubleClick={() => { if (isActive) handleToggle(); }}
+                        className={`rounded-lg p-3 cursor-pointer ${isActive ? 'bg-slate-600' : 'bg-slate-800 hover:bg-slate-700'}`}
+                        title={isActive ? 'Duplo clique para remover' : 'Clique para adicionar'}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleToggle(); }}
-                            className={`text-sm font-medium ${isActive ? 'text-sky-400' : 'text-slate-400'}`}
-                          >
+                          <span className={`text-sm font-medium ${isActive ? 'text-sky-400' : 'text-slate-400'}`}>
                             {period.label}
-                          </button>
+                          </span>
                           {isActive ? (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleToggle(); }}
-                              className="text-xs px-2 py-0.5 bg-red-600/30 text-red-400 rounded hover:bg-red-600/50"
-                            >
-                              ✕ Remover
-                            </button>
+                            <span className="text-xs px-2 py-0.5 bg-sky-600 text-white rounded">Tomou ✓</span>
                           ) : (
-                            <span className="text-xs text-slate-500">Clique para adicionar</span>
+                            <span className="text-xs text-slate-500">Clique +</span>
                           )}
                         </div>
 
@@ -1219,11 +1214,9 @@ const MeigeTracker = () => {
                                   newMeds[med.id][period.id].hour = e.target.value;
                                   setDayEntry({ ...dayEntry, medicationsTaken: newMeds });
                                 }}
-                                className="flex-1 p-1 rounded bg-slate-700 border border-slate-500 text-slate-100 text-sm"
+                                className="flex-1 p-1 rounded bg-slate-700 text-slate-100 text-sm border border-slate-500"
                               >
-                                {Array.from({ length: 24 }, (_, i) => (
-                                  <option key={i} value={String(i).padStart(2, '0')}>{i}h</option>
-                                ))}
+                                {[...Array(24)].map((_, h) => <option key={h} value={String(h)}>{String(h).padStart(2, '0')}:00</option>)}
                               </select>
                               <label className="text-xs text-slate-400">Qtd.</label>
                               <input
@@ -1244,7 +1237,8 @@ const MeigeTracker = () => {
                             </div>
                             <div className="flex gap-1">
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   const newMeds = JSON.parse(JSON.stringify(dayEntry.medicationsTaken || {}));
                                   if (!newMeds[med.id]) newMeds[med.id] = {};
                                   if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'antes' };
@@ -1256,10 +1250,11 @@ const MeigeTracker = () => {
                                   : 'bg-slate-700 text-slate-300'
                                   }`}
                               >
-                                Antes
+                                Antes refeição
                               </button>
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   const newMeds = JSON.parse(JSON.stringify(dayEntry.medicationsTaken || {}));
                                   if (!newMeds[med.id]) newMeds[med.id] = {};
                                   if (!newMeds[med.id][period.id]) newMeds[med.id][period.id] = { active: true, hour: period.defaultHour, qty: 1, timing: 'depois' };
@@ -1271,7 +1266,7 @@ const MeigeTracker = () => {
                                   : 'bg-slate-700 text-slate-300'
                                   }`}
                               >
-                                Depois
+                                Depois refeição
                               </button>
                             </div>
                           </>
