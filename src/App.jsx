@@ -608,15 +608,6 @@ const MeigeTracker = () => {
       const hasEntry = entries[dateStr];
       const hasBotox = botoxRecords.some(b => b.date === dateStr);
 
-      // Check for appointments from database
-      const dbAppointment = consultas.find(c => c.date === dateStr);
-      // Check for appointments from doctor directory (próxima consulta or ultima consulta)
-      const dirAppointment = medicos.find(m => m.proximaConsulta === dateStr || m.ultimaConsulta === dateStr);
-
-      const hasAppointment = dbAppointment || dirAppointment;
-      const appointmentType = dbAppointment?.tipo || dirAppointment?.especialidade;
-      const isUpcomingAppointment = new Date(dateStr) >= new Date(new Date().toISOString().split('T')[0]);
-
       const isSelected = dateStr === selectedDate;
       const isToday = dateStr === new Date().toISOString().split('T')[0];
 
@@ -648,11 +639,6 @@ const MeigeTracker = () => {
           </span>
           {hasBotox && (
             <span className="absolute bottom-1 right-1 text-xs text-sky-300 font-medium">BTX</span>
-          )}
-          {hasAppointment && !hasBotox && (
-            <span className={`absolute bottom-1 right-1 text-xs font-medium ${isUpcomingAppointment ? 'text-green-400' : 'text-purple-400'}`} title={appointmentType}>
-              {appointmentType?.substring(0, 3).toUpperCase() || 'CON'}
-            </span>
           )}
           {hasEntry && (
             <span className="absolute top-1 right-1 w-2 h-2 bg-sky-400 rounded-full"></span>
