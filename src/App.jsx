@@ -1102,35 +1102,59 @@ const MeigeTracker = () => {
           />
 
           {dayEntry.hadGoodPeriod && (
-            <>
+            <div className="grid grid-cols-2 gap-3 mt-3">
               <SelectField
-                label="Quando foi?"
+                label="Período"
                 value={dayEntry.goodPeriodWhen}
                 onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodWhen: v })}
                 options={[
-                  { value: 'manha_cedo', label: 'Manhã cedo' },
                   { value: 'manha', label: 'Manhã' },
-                  { value: 'almoco', label: 'Hora de almoço' },
                   { value: 'tarde', label: 'Tarde' },
-                  { value: 'fim_tarde', label: 'Fim da tarde' },
+                  { value: 'tarde_sesta', label: 'Tarde depois da sesta' },
                   { value: 'noite', label: 'Noite' },
                 ]}
               />
-
               <SelectField
-                label="Quanto tempo durou?"
-                value={dayEntry.goodPeriodDuration}
-                onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodDuration: v })}
+                label="Hora"
+                value={dayEntry.goodPeriodHour}
+                onChange={(v) => setDayEntry({ ...dayEntry, goodPeriodHour: v })}
                 options={[
-                  { value: '15min', label: '15 minutos' },
-                  { value: '30min', label: '30 minutos' },
-                  { value: '1hora', label: '1 hora' },
-                  { value: '2horas', label: '2 horas' },
-                  { value: 'varias_horas', label: 'Várias horas' },
-                  { value: 'dia_todo', label: 'Quase o dia todo' },
+                  { value: '06:00', label: '06:00' },
+                  { value: '06:30', label: '06:30' },
+                  { value: '07:00', label: '07:00' },
+                  { value: '07:30', label: '07:30' },
+                  { value: '08:00', label: '08:00' },
+                  { value: '08:30', label: '08:30' },
+                  { value: '09:00', label: '09:00' },
+                  { value: '09:30', label: '09:30' },
+                  { value: '10:00', label: '10:00' },
+                  { value: '10:30', label: '10:30' },
+                  { value: '11:00', label: '11:00' },
+                  { value: '11:30', label: '11:30' },
+                  { value: '12:00', label: '12:00' },
+                  { value: '12:30', label: '12:30' },
+                  { value: '13:00', label: '13:00' },
+                  { value: '13:30', label: '13:30' },
+                  { value: '14:00', label: '14:00' },
+                  { value: '14:30', label: '14:30' },
+                  { value: '15:00', label: '15:00' },
+                  { value: '15:30', label: '15:30' },
+                  { value: '16:00', label: '16:00' },
+                  { value: '16:30', label: '16:30' },
+                  { value: '17:00', label: '17:00' },
+                  { value: '17:30', label: '17:30' },
+                  { value: '18:00', label: '18:00' },
+                  { value: '18:30', label: '18:30' },
+                  { value: '19:00', label: '19:00' },
+                  { value: '19:30', label: '19:30' },
+                  { value: '20:00', label: '20:00' },
+                  { value: '20:30', label: '20:30' },
+                  { value: '21:00', label: '21:00' },
+                  { value: '21:30', label: '21:30' },
+                  { value: '22:00', label: '22:00' },
                 ]}
               />
-            </>
+            </div>
           )}
         </section>
 
