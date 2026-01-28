@@ -1712,9 +1712,30 @@ const MeigeTracker = () => {
           }
         }
       } else {
-        // Empty cell - prompt to add a new doctor appointment
-        const addNew = confirm(`Adicionar consulta para ${formatDatePT(dateStr)}?\n\nClique OK para adicionar um novo médico com esta data.`);
-        if (addNew) {
+        // Empty cell - prompt to select an existing doctor or add new
+        if (medicos.length > 0) {
+          const doctorList = medicos.map((m, i) => `${i + 1}. ${m.nome} (${m.especialidade})`).join('\n');
+          const choice = prompt(
+            `Adicionar consulta para ${formatDatePT(dateStr)}:\n\n${doctorList}\n\nDigite o número do médico (ou 0 para adicionar novo médico):`
+          );
+          if (choice !== null) {
+            const num = parseInt(choice);
+            if (num === 0) {
+              setShowAddDoctor(true);
+              setNewDoctor(prev => ({ ...prev, proximaConsulta: dateStr }));
+            } else if (num >= 1 && num <= medicos.length) {
+              const selectedDoctor = medicos[num - 1];
+              // Determine if it's a past or future date
+              const isPast = new Date(dateStr) < new Date(new Date().toDateString());
+              setMedicos(medicos.map(doc =>
+                doc.id === selectedDoctor.id
+                  ? { ...doc, [isPast ? 'ultimaConsulta' : 'proximaConsulta']: dateStr }
+                  : doc
+              ));
+              alert(`✅ Consulta ${isPast ? 'passada' : ''} adicionada para ${selectedDoctor.nome}!`);
+            }
+          }
+        } else {
           setShowAddDoctor(true);
           setNewDoctor(prev => ({ ...prev, proximaConsulta: dateStr }));
         }
