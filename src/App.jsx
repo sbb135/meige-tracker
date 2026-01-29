@@ -392,6 +392,7 @@ const MeigeTracker = () => {
         sleep_quality: dayEntry.sleepQuality,
         wake_eyes: dayEntry.wakeEyes,
         wake_face: dayEntry.wakeFace,
+        wake_neck: dayEntry.wakeNeck,
         morning_eyes: dayEntry.morningEyes,
         morning_face: dayEntry.morningFace,
         morning_neck: dayEntry.morningNeck,
