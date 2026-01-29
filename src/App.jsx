@@ -2736,6 +2736,71 @@ const MeigeTracker = () => {
               </div>
             </div>
 
+            {/* FIGURE 6: Clonazepam vs Sleep */}
+            {timeSeriesData.some(d => d.clonazepam > 0) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 6: Clonazepam vs Sono</h3>
+                <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={timeSeriesData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="dose" stroke="#10b981" tick={{ fontSize: 11 }} label={{ value: 'Dose (mg)', angle: -90, position: 'insideLeft', fill: '#10b981', fontSize: 10 }} />
+                      <YAxis yAxisId="sleep" orientation="right" domain={[4, 10]} stroke="#6366f1" tick={{ fontSize: 11 }} label={{ value: 'Sono (h)', angle: 90, position: 'insideRight', fill: '#6366f1', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Line yAxisId="dose" type="monotone" dataKey="clonazepam" name="Clonazepam (mg)" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Sono (h)" stroke="#6366f1" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 2 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* FIGURE 7: Trihexifenidil vs Sleep */}
+            {timeSeriesData.some(d => d.trihexifenidil > 0) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 7: Trihexifenidil vs Sono</h3>
+                <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={timeSeriesData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="dose" stroke="#3b82f6" tick={{ fontSize: 11 }} label={{ value: 'Dose (mg)', angle: -90, position: 'insideLeft', fill: '#3b82f6', fontSize: 10 }} />
+                      <YAxis yAxisId="sleep" orientation="right" domain={[4, 10]} stroke="#6366f1" tick={{ fontSize: 11 }} label={{ value: 'Sono (h)', angle: 90, position: 'insideRight', fill: '#6366f1', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Line yAxisId="dose" type="monotone" dataKey="trihexifenidil" name="Trihexifenidil (mg)" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Sono (h)" stroke="#6366f1" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 2 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* FIGURE 8: Valdoxan vs Sleep */}
+            {timeSeriesData.some(d => d.valdoxan > 0) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 8: Valdoxan vs Sono</h3>
+                <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={timeSeriesData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="dose" stroke="#ec4899" tick={{ fontSize: 11 }} label={{ value: 'Dose (mg)', angle: -90, position: 'insideLeft', fill: '#ec4899', fontSize: 10 }} />
+                      <YAxis yAxisId="sleep" orientation="right" domain={[4, 10]} stroke="#6366f1" tick={{ fontSize: 11 }} label={{ value: 'Sono (h)', angle: 90, position: 'insideRight', fill: '#6366f1', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Line yAxisId="dose" type="monotone" dataKey="valdoxan" name="Valdoxan (mg)" stroke="#ec4899" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Sono (h)" stroke="#6366f1" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 2 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
             <div className="bg-slate-800 rounded-xl p-5">
               <h3 className="font-semibold text-slate-100 mb-4">Últimos registos ({filteredDates.length} dias)</h3>
               {filteredDates.slice(-7).reverse().map(date => {
