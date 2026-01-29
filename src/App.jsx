@@ -2635,21 +2635,43 @@ const MeigeTracker = () => {
               </div>
             </div>
 
-            {/* FIGURE 2: Medicação vs GDB */}
+            {/* FIGURE 2: Daily Trends Over Time */}
+            <div className="bg-slate-800 rounded-xl p-5 mb-4">
+              <h3 className="font-semibold text-slate-100 mb-1">Fig. 2: Tendência ao Longo do Tempo</h3>
+              <p className="text-sm text-slate-400 mb-4">Evolução diária dos sintomas motores e funcionais</p>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={timeSeriesData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} ticks={[0, 1, 2, 3, 4]} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                    <Legend wrapperStyle={{ fontSize: '10px' }} />
+                    <Line type="monotone" dataKey="morningEyes" name="Olhos" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="morningFace" name="Maxilar" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="morningNeck" name="Pescoço" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="morningSpeech" name="Fala" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="morningEating" name="Comer" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* FIGURE 3: Medicação vs Sintomas */}
             {timeSeriesData.some(d => d.clonazepam > 0 || d.trihexifenidil > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 2: Medicação vs Carga de Distonia</h3>
-                <p className="text-sm text-slate-400 mb-4">Avalia resposta e wearing-off.</p>
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 3: Medicação vs Sintomas</h3>
+                <p className="text-sm text-slate-400 mb-4">Comparação de doses com gravidade dos sintomas</p>
                 <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={timeSeriesData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                       <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="gdb" domain={[0, 4]} stroke="#a855f7" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: -90, position: 'insideLeft', fill: '#a855f7', fontSize: 10 }} />
-                      <YAxis yAxisId="meds" orientation="right" stroke="#10b981" tick={{ fontSize: 11 }} />
+                      <YAxis yAxisId="symptoms" domain={[0, 4]} stroke="#f59e0b" tick={{ fontSize: 11 }} label={{ value: 'Sintomas', angle: -90, position: 'insideLeft', fill: '#f59e0b', fontSize: 10 }} />
+                      <YAxis yAxisId="meds" orientation="right" stroke="#10b981" tick={{ fontSize: 11 }} label={{ value: 'Dose (mg)', angle: 90, position: 'insideRight', fill: '#10b981', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend wrapperStyle={{ fontSize: '10px' }} />
-                      <Line yAxisId="gdb" type="monotone" dataKey="dailyGDB" name="GDB" stroke="#a855f7" strokeWidth={3} dot={{ r: 2 }} />
+                      <Line yAxisId="symptoms" type="monotone" dataKey="morningFace" name="Maxilar" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
                       <Line yAxisId="meds" type="monotone" dataKey="clonazepam" name="Clonazepam" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                       <Line yAxisId="meds" type="monotone" dataKey="trihexifenidil" name="Trihexifenidil" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                     </LineChart>
@@ -2658,78 +2680,58 @@ const MeigeTracker = () => {
               </div>
             )}
 
-            {/* FIGURE 3: Trajetória Longitudinal */}
-            <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-1">Fig. 3: Trajetória Longitudinal</h3>
-              <p className="text-sm text-slate-400 mb-4">GDB diário + média 7 dias. Responde: "Está piorando?"</p>
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timeSeriesData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} formatter={(v, n) => [v.toFixed(2), n]} />
-                    <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    <Line type="monotone" dataKey="dailyGDB" name="GDB diário" stroke="#94a3b8" strokeWidth={1} dot={{ r: 3, fill: '#94a3b8' }} />
-                    <Line type="monotone" dataKey="gdb7dayAvg" name="Média 7d" stroke="#f59e0b" strokeWidth={3} strokeDasharray="8 4" dot={false} connectNulls />
-                  </LineChart>
-                </ResponsiveContainer>
+            {/* FIGURE 4: Sleep vs Symptoms */}
+            {timeSeriesData.some(d => d.sono !== null && d.sono > 0) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 4: Sono vs Sintomas</h3>
+                <p className="text-sm text-slate-400 mb-4">Horas de sono comparadas com gravidade dos sintomas</p>
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={timeSeriesData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="sleep" domain={[4, 10]} stroke="#6366f1" tick={{ fontSize: 11 }} label={{ value: 'Sono (h)', angle: -90, position: 'insideLeft', fill: '#6366f1', fontSize: 10 }} />
+                      <YAxis yAxisId="symptoms" orientation="right" domain={[0, 4]} stroke="#f59e0b" tick={{ fontSize: 11 }} label={{ value: 'Sintomas', angle: 90, position: 'insideRight', fill: '#f59e0b', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Horas Sono" stroke="#6366f1" strokeWidth={3} dot={{ r: 2 }} />
+                      <Line yAxisId="symptoms" type="monotone" dataKey="morningFace" name="Maxilar" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* FIGURE 4: Motor vs Função - Scatter */}
+            {/* FIGURE 5: Symptom Distribution */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-1">Fig. 4: Motor vs Função</h3>
-              <p className="text-sm text-slate-400 mb-4">Dissociação MSI/BFI. Canto superior direito = urgente.</p>
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis type="number" dataKey="x" name="MSI" domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'MSI (Motor)', position: 'insideBottom', offset: -5, fill: '#94a3b8', fontSize: 10 }} />
-                    <YAxis type="number" dataKey="y" name="BFI" domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'BFI (Função)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} formatter={(v, n) => [v.toFixed(2), n]} />
-                    <Scatter name="Dias" data={timeSeriesData.map(d => ({ x: d.MSI || 0, y: d.BFI || 0 }))} fill="#0ea5e9" />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* FIGURE 5: Impacto Funcional */}
-            <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-1">Fig. 5: Impacto Funcional</h3>
-              <p className="text-sm text-slate-400 mb-4">Distribuição da limitação. Justifica ajuste terapêutico.</p>
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="bg-slate-900/50 rounded-lg p-3 text-center">
-                  <div className="text-xs text-slate-400 mb-1">Fala</div>
-                  <div className="text-2xl font-bold text-purple-400">{(timeSeriesData.reduce((s, d) => s + (d.fala || 0), 0) / (timeSeriesData.length || 1)).toFixed(1)}</div>
-                </div>
-                <div className="bg-slate-900/50 rounded-lg p-3 text-center">
-                  <div className="text-xs text-slate-400 mb-1">Comer</div>
-                  <div className="text-2xl font-bold text-red-400">{(timeSeriesData.reduce((s, d) => s + (d.comer || 0), 0) / (timeSeriesData.length || 1)).toFixed(1)}</div>
-                </div>
-                <div className="bg-slate-900/50 rounded-lg p-3 text-center">
-                  <div className="text-xs text-slate-400 mb-1">Limitação</div>
-                  <div className="text-2xl font-bold text-amber-400">{(timeSeriesData.reduce((s, d) => s + (d.limitation || 0), 0) / (timeSeriesData.length || 1)).toFixed(1)}</div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {['Fala', 'Comer', 'Limitação'].map((label, idx) => {
-                  const key = ['fala', 'comer', 'limitation'][idx];
+              <h3 className="font-semibold text-slate-100 mb-1">Fig. 5: Distribuição de Gravidade</h3>
+              <p className="text-sm text-slate-400 mb-4">Dias em cada nível (0=Nenhum → 4=Incapacitante)</p>
+              <div className="space-y-3">
+                {[
+                  { label: 'Olhos', key: 'morningEyes' },
+                  { label: 'Maxilar', key: 'morningFace' },
+                  { label: 'Pescoço', key: 'morningNeck' },
+                  { label: 'Fala', key: 'morningSpeech' },
+                  { label: 'Comer', key: 'morningEating' }
+                ].map(({ label, key }) => {
                   const counts = [0, 0, 0, 0, 0];
                   timeSeriesData.forEach(d => { const v = Math.round(d[key] || 0); if (v >= 0 && v <= 4) counts[v]++; });
                   const total = timeSeriesData.length || 1;
                   const colors = ['bg-emerald-500', 'bg-sky-500', 'bg-amber-500', 'bg-orange-500', 'bg-red-500'];
                   return (
                     <div key={label}>
-                      <div className="text-xs text-slate-400 mb-1">{label}</div>
-                      <div className="flex h-4 rounded overflow-hidden">
-                        {counts.map((c, i) => <div key={i} className={colors[i]} style={{ width: `${(c / total) * 100}%` }} title={`${i}: ${Math.round((c / total) * 100)}%`} />)}
+                      <div className="flex justify-between text-xs text-slate-400 mb-1">
+                        <span>{label}</span>
+                        <span className="text-slate-500">{counts.map((c, i) => c > 0 ? `${i}:${c}d ` : '').join('')}</span>
+                      </div>
+                      <div className="flex h-5 rounded overflow-hidden">
+                        {counts.map((c, i) => <div key={i} className={colors[i]} style={{ width: `${(c / total) * 100}%` }} title={`Nível ${i}: ${c} dias (${Math.round((c / total) * 100)}%)`} />)}
                       </div>
                     </div>
                   );
                 })}
-                <div className="flex justify-between text-xs text-slate-500 mt-1">
-                  <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span>
+                <div className="flex justify-between text-xs text-slate-500 mt-2">
+                  <span>0 (Nenhum)</span><span>1</span><span>2</span><span>3</span><span>4 (Incapacitante)</span>
                 </div>
               </div>
             </div>
