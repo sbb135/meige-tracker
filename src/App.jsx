@@ -2390,6 +2390,7 @@ const MeigeTracker = () => {
       // Per-epoch symptom data
       const wakeEyes = entry.wakeEyes || 0;
       const wakeFace = entry.wakeFace || 0;
+      const wakeNeck = entry.wakeNeck || 0;
       const morningEyes = entry.morningEyes || 0;
       const morningFace = entry.morningFace || 0;
       const morningNeck = entry.morningNeck || 0;
@@ -2442,7 +2443,7 @@ const MeigeTracker = () => {
         date: `${d}/${m}`,
         fullDate: date,
         // Raw per-epoch motor symptoms
-        wakeEyes, wakeFace,
+        wakeEyes, wakeFace, wakeNeck,
         morningEyes, morningFace, morningNeck,
         afternoonEyes, afternoonFace, afternoonNeck,
         eveningEyes, eveningFace, eveningNeck,
@@ -2489,7 +2490,7 @@ const MeigeTracker = () => {
         epoch: 'Acordar',
         eyes: timeSeriesData.reduce((s, d) => s + d.wakeEyes, 0) / timeSeriesData.length,
         jaw: timeSeriesData.reduce((s, d) => s + d.wakeFace, 0) / timeSeriesData.length,
-        neck: 0, // No neck at wake
+        neck: timeSeriesData.reduce((s, d) => s + d.wakeNeck, 0) / timeSeriesData.length,
         speech: 0,
         eating: 0,
         MSI: timeSeriesData.reduce((s, d) => s + d.wakeMSI, 0) / timeSeriesData.length,
@@ -2631,8 +2632,9 @@ const MeigeTracker = () => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
                         <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
-                        <Line type="monotone" dataKey="speech" name="Fala" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} />
-                        <Line type="monotone" dataKey="eating" name="Comer" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                        <Line type="monotone" dataKey="speech" name="Disartria" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} />
+                        <Line type="monotone" dataKey="eating" name="Disfagia" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
