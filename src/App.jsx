@@ -179,8 +179,8 @@ const MeigeTracker = () => {
     eveningSpeech: null,
     eveningEating: null,
 
-    // Período bom
-    hadGoodPeriod: false,
+    // Período bom - null = unselected
+    hadGoodPeriod: null,
     goodPeriodDuration: '',
     goodPeriodWhen: '',
 
@@ -994,7 +994,7 @@ const MeigeTracker = () => {
                 <button
                   key={opt.value}
                   onClick={() => setDayEntry({ ...dayEntry, emotionalDysregulation: opt.value })}
-                  className={`flex-1 py-2 px-1 rounded text-xs ${(dayEntry.emotionalDysregulation || 0) === opt.value
+                  className={`flex-1 py-2 px-1 rounded text-xs ${dayEntry.emotionalDysregulation === opt.value
                     ? 'bg-sky-600 text-white'
                     : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
                     }`}
@@ -1010,11 +1010,11 @@ const MeigeTracker = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setDayEntry({ ...dayEntry, wakeCrying: false })}
-                className={`px-4 py-2 rounded-lg ${!dayEntry.wakeCrying ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+                className={`px-4 py-2 rounded-lg ${dayEntry.wakeCrying === false ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-300'}`}
               >Não</button>
               <button
                 onClick={() => setDayEntry({ ...dayEntry, wakeCrying: true })}
-                className={`px-4 py-2 rounded-lg ${dayEntry.wakeCrying ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+                className={`px-4 py-2 rounded-lg ${dayEntry.wakeCrying === true ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-300'}`}
               >Sim</button>
             </div>
           </div>
@@ -1241,11 +1241,11 @@ const MeigeTracker = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setDayEntry({ ...dayEntry, hadGoodPeriod: false, goodPeriodWhen: '', goodPeriodDuration: '' })}
-                className={`px-6 py-3 rounded-lg font-medium ${!dayEntry.hadGoodPeriod ? 'bg-slate-600 text-white' : 'bg-slate-700 text-slate-400'}`}
+                className={`px-6 py-3 rounded-lg font-medium ${dayEntry.hadGoodPeriod === false ? 'bg-slate-600 text-white' : 'bg-slate-700 text-slate-400'}`}
               >Não</button>
               <button
                 onClick={() => setDayEntry({ ...dayEntry, hadGoodPeriod: true })}
-                className={`px-6 py-3 rounded-lg font-medium ${dayEntry.hadGoodPeriod ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400'}`}
+                className={`px-6 py-3 rounded-lg font-medium ${dayEntry.hadGoodPeriod === true ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-400'}`}
               >Sim</button>
             </div>
           </div>
