@@ -140,34 +140,44 @@ const MeigeTracker = () => {
     // Sono
     bedTime: '',
     wakeTime: '',
-    sleepInterruptions: 0,
+    sleepInterruptions: null,
     sleepQuality: '',
     feltRested: '',
 
-    // Ao acordar
-    wakeEyes: 0,
-    wakeFace: 0,
-    wakeEmotion: '',
+    // Ao acordar - null = unselected
+    wakeEyes: null,
+    wakeFace: null,
+    wakeNeck: null,
+    wakeEyesFreq: null,
+    wakeSpeech: null,
+    wakeEating: null,
+    emotionalDysregulation: '',
     wakeStabilizeTime: '',
-    wakeCrying: false,
+    wakeCrying: null,
 
     // Manhã
-    morningEyes: 0,
-    morningFace: 0,
-    morningSpeech: '',
-    morningEating: '',
+    morningEyes: null,
+    morningFace: null,
+    morningNeck: null,
+    morningEyesFreq: null,
+    morningSpeech: null,
+    morningEating: null,
 
     // Tarde
-    afternoonEyes: 0,
-    afternoonFace: 0,
-    afternoonSpeech: '',
-    afternoonEating: '',
+    afternoonEyes: null,
+    afternoonFace: null,
+    afternoonNeck: null,
+    afternoonEyesFreq: null,
+    afternoonSpeech: null,
+    afternoonEating: null,
 
     // Noite
-    eveningEyes: 0,
-    eveningFace: 0,
-    eveningSpeech: '',
-    eveningEating: '',
+    eveningEyes: null,
+    eveningFace: null,
+    eveningNeck: null,
+    eveningEyesFreq: null,
+    eveningSpeech: null,
+    eveningEating: null,
 
     // Período bom
     hadGoodPeriod: false,
