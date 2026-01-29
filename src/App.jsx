@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell, ScatterChart, Scatter } from 'recharts';
 import { supabase } from './supabase';
 
 // Access key from environment variable (set in Vercel dashboard)
@@ -631,13 +631,17 @@ const MeigeTracker = () => {
 
       let bgClass = 'bg-slate-700';
       if (hasEntry) {
-        const avgSymptoms = (
-          (hasEntry.morningEyes || 0) + (hasEntry.afternoonEyes || 0) + (hasEntry.eveningEyes || 0) +
-          (hasEntry.morningFace || 0) + (hasEntry.afternoonFace || 0) + (hasEntry.eveningFace || 0)
-        ) / 6;
-        if (avgSymptoms <= 2) bgClass = 'bg-sky-800';
-        else if (avgSymptoms <= 5) bgClass = 'bg-slate-600';
-        else bgClass = 'bg-slate-500';
+        // Calculate daily burden: average severity across all body regions and time periods (0-4 scale)
+        // Each time period: (eyes + face + neck) / 3 = 0-4
+        // Daily burden = average of all periods = 0-4 (matches symptom scale)
+        const wakeAvg = ((hasEntry.wakeEyes || 0) + (hasEntry.wakeFace || 0) + (hasEntry.wakeNeck || 0)) / 3;
+        const morningAvg = ((hasEntry.morningEyes || 0) + (hasEntry.morningFace || 0) + (hasEntry.morningNeck || 0)) / 3;
+        const afternoonAvg = ((hasEntry.afternoonEyes || 0) + (hasEntry.afternoonFace || 0) + (hasEntry.afternoonNeck || 0)) / 3;
+        const eveningAvg = ((hasEntry.eveningEyes || 0) + (hasEntry.eveningFace || 0) + (hasEntry.eveningNeck || 0)) / 3;
+        const dailyBurden = (wakeAvg + morningAvg + afternoonAvg + eveningAvg) / 4; // 0-4 scale
+        if (dailyBurden <= 1) bgClass = 'bg-sky-800';      // Dia bom: 0-1
+        else if (dailyBurden <= 2) bgClass = 'bg-slate-600'; // Dia moderado: 1-2
+        else bgClass = 'bg-slate-500';                       // Dia difícil: 2-4
       }
 
       days.push(
@@ -700,15 +704,15 @@ const MeigeTracker = () => {
           <div className="flex flex-wrap gap-4 text-sm text-slate-300">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-sky-800 rounded"></div>
-              <span>Dia bom (0-2)</span>
+              <span>Dia bom (0-1)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-slate-600 rounded"></div>
-              <span>Dia moderado (3-5)</span>
+              <span>Dia moderado (1-2)</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-slate-500 rounded"></div>
-              <span>Dia difícil (6-10)</span>
+              <span>Dia difícil (2-4)</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sky-300 text-xs">BTX</span>
@@ -2571,265 +2575,165 @@ const MeigeTracker = () => {
           </div>
         ) : (
           <>
-            {/* FIGURE 1: Circadian Dynamics */}
+            {/* FIGURE 1: Perfil Circadiano - Small Multiples */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-1">Fig. 1: Dinâmica Circadiana da Distonia</h3>
-              <p className="text-sm text-slate-400 mb-4">Variação intra-dia: identifica picos matinais, agravamento vespertino ou fadiga neuromuscular.</p>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={circadianData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="epoch" stroke="#94a3b8" tick={{ fontSize: 11 }} />
-                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'Intensidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                    <Legend wrapperStyle={{ fontSize: '11px' }} />
-                    <Line type="monotone" dataKey="eyes" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="jaw" name="Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="neck" name="Cervical" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                <div className="bg-slate-700/50 p-2 rounded text-center">
-                  <div className="text-slate-400">MSI Manhã</div>
-                  <div className="text-lg font-semibold text-sky-400">{circadianData[1].MSI.toFixed(1)}</div>
+              <h3 className="font-semibold text-slate-100 mb-1">Fig. 1: Perfil Circadiano</h3>
+              <p className="text-sm text-slate-400 mb-4">Padrão diurno por região. Identifica picos matinais, fadiga vespertina.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <div className="text-xs text-sky-400 font-medium mb-2">Blefarospasmo</div>
+                  <div className="h-28">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={circadianData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
+                        <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
+                        <Line type="monotone" dataKey="eyes" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-                <div className="bg-slate-700/50 p-2 rounded text-center">
-                  <div className="text-slate-400">MSI Tarde</div>
-                  <div className="text-lg font-semibold text-amber-400">{circadianData[2].MSI.toFixed(1)}</div>
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <div className="text-xs text-amber-400 font-medium mb-2">Oromandibular</div>
+                  <div className="h-28">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={circadianData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
+                        <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
+                        <Line type="monotone" dataKey="jaw" stroke="#f59e0b" strokeWidth={3} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-                <div className="bg-slate-700/50 p-2 rounded text-center">
-                  <div className="text-slate-400">MSI Noite</div>
-                  <div className="text-lg font-semibold text-red-400">{circadianData[3].MSI.toFixed(1)}</div>
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <div className="text-xs text-emerald-400 font-medium mb-2">Cervical</div>
+                  <div className="h-28">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={circadianData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
+                        <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
+                        <Line type="monotone" dataKey="neck" stroke="#10b981" strokeWidth={3} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <div className="text-xs text-purple-400 font-medium mb-2">Função Bulbar</div>
+                  <div className="h-28">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={circadianData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
+                        <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
+                        <Line type="monotone" dataKey="BFI" stroke="#a855f7" strokeWidth={3} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* FIGURE 8: Longitudinal Trajectory (Daily GDB over time) */}
+            {/* FIGURE 2: Medicação vs GDB */}
+            {timeSeriesData.some(d => d.clonazepam > 0 || d.trihexifenidil > 0) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 2: Medicação vs Carga de Distonia</h3>
+                <p className="text-sm text-slate-400 mb-4">Avalia resposta e wearing-off.</p>
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={timeSeriesData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <YAxis yAxisId="gdb" domain={[0, 4]} stroke="#a855f7" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: -90, position: 'insideLeft', fill: '#a855f7', fontSize: 10 }} />
+                      <YAxis yAxisId="meds" orientation="right" stroke="#10b981" tick={{ fontSize: 11 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Line yAxisId="gdb" type="monotone" dataKey="dailyGDB" name="GDB" stroke="#a855f7" strokeWidth={3} dot={{ r: 2 }} />
+                      <Line yAxisId="meds" type="monotone" dataKey="clonazepam" name="Clonazepam" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                      <Line yAxisId="meds" type="monotone" dataKey="trihexifenidil" name="Trihexifenidil" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* FIGURE 3: Trajetória Longitudinal */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-1">Fig. 2: Trajetória Longitudinal</h3>
-              <p className="text-sm text-slate-400 mb-4">GDB diário ao longo do tempo. Média móvel a 7 dias indica tendência.</p>
-              <div className="h-72">
+              <h3 className="font-semibold text-slate-100 mb-1">Fig. 3: Trajetória Longitudinal</h3>
+              <p className="text-sm text-slate-400 mb-4">GDB diário + média 7 dias. Responde: "Está piorando?"</p>
+              <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={timeSeriesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                     <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
                     <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
-                      formatter={(value, name) => [value.toFixed(2), name]}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '11px' }} />
-                    <Line type="monotone" dataKey="dailyGDB" name="GDB Diário" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="dailyMSI" name="MSI Diário" stroke="#0ea5e9" strokeWidth={1} dot={false} strokeDasharray="3 3" />
-                    <Line type="monotone" dataKey="dailyBFI" name="BFI Diário" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="3 3" />
+                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} formatter={(v, n) => [v.toFixed(2), n]} />
+                    <Legend wrapperStyle={{ fontSize: '10px' }} />
+                    <Line type="monotone" dataKey="dailyGDB" name="GDB diário" stroke="#94a3b8" strokeWidth={1} dot={{ r: 3, fill: '#94a3b8' }} />
+                    <Line type="monotone" dataKey="gdb7dayAvg" name="Média 7d" stroke="#f59e0b" strokeWidth={3} strokeDasharray="8 4" dot={false} connectNulls />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="mt-3 flex justify-around text-xs">
-                <div className="text-center">
-                  <div className="text-slate-400">GDB Médio</div>
-                  <div className="text-xl font-bold text-purple-400">{(timeSeriesData.reduce((s, d) => s + d.dailyGDB, 0) / timeSeriesData.length).toFixed(2)}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-slate-400">GDB Máx</div>
-                  <div className="text-xl font-bold text-red-400">{Math.max(...timeSeriesData.map(d => d.dailyGDB)).toFixed(2)}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-slate-400">GDB Mín</div>
-                  <div className="text-xl font-bold text-green-400">{Math.min(...timeSeriesData.map(d => d.dailyGDB)).toFixed(2)}</div>
-                </div>
-              </div>
             </div>
 
-            {/* FIGURE 3: Sleep-Symptom Coupling */}
-            {timeSeriesData.some(d => d.sono !== null) && (
-              <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 3: Correlação Sono-Distonia</h3>
-                <p className="text-sm text-slate-400 mb-4">Relação entre duração do sono e GDB do dia seguinte. Privação de sono pode amplificar sintomas.</p>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeSeriesData.filter(d => d.sono !== null)}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="sleep" domain={[0, 12]} stroke="#22d3ee" tick={{ fontSize: 11 }} label={{ value: 'Horas sono', angle: -90, position: 'insideLeft', fill: '#22d3ee', fontSize: 10 }} />
-                      <YAxis yAxisId="gdb" orientation="right" domain={[0, 4]} stroke="#a855f7" tick={{ fontSize: 11 }} label={{ value: 'GDB', angle: 90, position: 'insideRight', fill: '#a855f7', fontSize: 10 }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                      <Legend wrapperStyle={{ fontSize: '11px' }} />
-                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Sono (h)" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3 }} />
-                      <Line yAxisId="gdb" type="monotone" dataKey="dailyGDB" name="GDB" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {/* FIGURE 4: Medication Response */}
-            {timeSeriesData.some(d => d.clonazepam > 0 || d.valdoxan > 0) && (
-              <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 4: Resposta à Medicação</h3>
-                <p className="text-sm text-slate-400 mb-4">Correlação entre doses de medicação e carga de distonia.</p>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeSeriesData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="gdb" domain={[0, 4]} stroke="#a855f7" tick={{ fontSize: 11 }} />
-                      <YAxis yAxisId="meds" orientation="right" stroke="#10b981" tick={{ fontSize: 11 }} label={{ value: 'Dose', angle: 90, position: 'insideRight', fill: '#10b981', fontSize: 10 }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                      <Legend wrapperStyle={{ fontSize: '11px' }} />
-                      <Line yAxisId="gdb" type="monotone" dataKey="dailyGDB" name="GDB" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} />
-                      <Line yAxisId="meds" type="monotone" dataKey="clonazepam" name="Clonazepam (mg)" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} strokeDasharray="5 5" />
-                      <Line yAxisId="meds" type="monotone" dataKey="valdoxan" name="Valdoxan (gotas)" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} strokeDasharray="5 5" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {/* Original correlation chart - Blefarospasmo vs Oromandibular vs Cervical */}
+            {/* FIGURE 4: Motor vs Função - Scatter */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-2">Séries Temporais: Sintomas por Região</h3>
-              <p className="text-sm text-slate-400 mb-4">Evolução diária dos sintomas motores.</p>
-              <div className="h-72">
+              <h3 className="font-semibold text-slate-100 mb-1">Fig. 4: Motor vs Função</h3>
+              <p className="text-sm text-slate-400 mb-4">Dissociação MSI/BFI. Canto superior direito = urgente.</p>
+              <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timeSeriesData}>
+                  <ScatterChart>
                     <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade (0-4)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
-                      labelFormatter={(label) => `Data: ${label}`}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="neck" name="Distonia Cervical" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
-                  </LineChart>
+                    <XAxis type="number" dataKey="x" name="MSI" domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'MSI (Motor)', position: 'insideBottom', offset: -5, fill: '#94a3b8', fontSize: 10 }} />
+                    <YAxis type="number" dataKey="y" name="BFI" domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'BFI (Função)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} formatter={(v, n) => [v.toFixed(2), n]} />
+                    <Scatter name="Dias" data={timeSeriesData.map(d => ({ x: d.MSI || 0, y: d.BFI || 0 }))} fill="#0ea5e9" />
+                  </ScatterChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Medication vs Symptoms Correlation - Split by medication */}
-            {timeSeriesData.some(d => d.clonazepam > 0 || d.valdoxan > 0) && (
-              <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-2">Correlação Medicação vs Sintomas</h3>
-                <p className="text-sm text-slate-400 mb-4">Relação entre cada medicamento e a severidade dos sintomas principais.</p>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeSeriesData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="symptoms" domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Sintomas (0-4)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                      <YAxis yAxisId="meds" orientation="right" domain={[0, 4]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Dose (mg/gotas)', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                      <Legend />
-                      <Line yAxisId="symptoms" type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
-                      <Line yAxisId="symptoms" type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
-                      <Line yAxisId="meds" type="monotone" dataKey="clonazepam" name="Clonazepam (mg)" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 5" />
-                      <Line yAxisId="meds" type="monotone" dataKey="valdoxan" name="Valdoxan (gotas)" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 5" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {/* Antidepressant vs Mood Correlation */}
-            {timeSeriesData.some(d => d.valdoxan > 0) && (
-              <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-2">Antidepressivo vs Humor e Choro Fácil</h3>
-                <p className="text-sm text-slate-400 mb-4">Correlação entre Valdoxan e sintomas do humor (ansiedade, choro fácil).</p>
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeSeriesData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="mood" domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Escala (0-4)', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                      <YAxis yAxisId="meds" orientation="right" domain={[0, 30]} stroke="#a855f7" tick={{ fontSize: 12 }} label={{ value: 'Gotas', angle: 90, position: 'insideRight', fill: '#a855f7', fontSize: 10 }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                      <Legend />
-                      <Line yAxisId="mood" type="monotone" dataKey="anxiety" name="Ansiedade" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
-                      <Line yAxisId="mood" type="monotone" dataKey="choro" name="Choro Fácil" stroke="#ec4899" strokeWidth={2} dot={{ r: 3 }} />
-                      <Line yAxisId="meds" type="monotone" dataKey="valdoxan" name="Valdoxan (gotas)" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 5" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {/* Functional Impact: Oromandibular Dystonia */}
+            {/* FIGURE 5: Impacto Funcional */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-2">Impacto Funcional da Distonia Oromandibular</h3>
-              <p className="text-sm text-slate-400 mb-4">Correlação entre severidade da distonia e funções oromotoras (fala, mastigação/deglutição)</p>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timeSeriesData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
-                      formatter={(value, name) => {
-                        if (name.includes('Disartria') || name.includes('Disfagia')) {
-                          const labels = { 0: 'Normal', 3: 'Dificuldade leve', 7: 'Dificuldade moderada', 10: 'Incapacidade' };
-                          return [labels[value] || value, name];
-                        }
-                        return [value, name];
-                      }}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-                    <Line type="monotone" dataKey="fala" name="Disartria (fala)" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-                    <Line type="monotone" dataKey="comer" name="Disfagia (comer)" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Circadian Pattern */}
-            <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-2">Padrão Circadiano da Distonia</h3>
-              <p className="text-sm text-slate-400 mb-4">Variação da severidade ao longo do dia. Padrão crescente sugere fadiga neuromuscular.</p>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timeSeriesData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                    <Legend />
-                    <Line type="monotone" dataKey="face" name="Manhã (pós-acordar)" stroke="#fbbf24" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="faceTarde" name="Tarde (12h-18h)" stroke="#f97316" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="faceNoite" name="Noite (após 18h)" stroke="#dc2626" strokeWidth={2} dot={{ r: 2 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Sleep-Dystonia Correlation */}
-            {
-              timeSeriesData.some(d => d.sono !== null) && (
-                <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                  <h3 className="font-semibold text-slate-100 mb-2">Correlação Sono-Distonia</h3>
-                  <p className="text-sm text-slate-400 mb-4">Relação entre duração do sono e severidade dos sintomas. Privação de sono pode exacerbar distonia.</p>
-                  <div className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={timeSeriesData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                        <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                        <YAxis yAxisId="symptoms" domain={[0, 10]} stroke="#94a3b8" tick={{ fontSize: 12 }} label={{ value: 'Severidade', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
-                        <YAxis yAxisId="sleep" orientation="right" domain={[0, 12]} stroke="#22c55e" tick={{ fontSize: 12 }} label={{ value: 'Horas', angle: 90, position: 'insideRight', fill: '#22c55e', fontSize: 10 }} />
-                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                        <Legend />
-                        <Line yAxisId="symptoms" type="monotone" dataKey="face" name="Distonia Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
-                        <Line yAxisId="symptoms" type="monotone" dataKey="olhos" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
-                        <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Duração do Sono (h)" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+              <h3 className="font-semibold text-slate-100 mb-1">Fig. 5: Impacto Funcional</h3>
+              <p className="text-sm text-slate-400 mb-4">Distribuição da limitação. Justifica ajuste terapêutico.</p>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="bg-slate-900/50 rounded-lg p-3 text-center">
+                  <div className="text-xs text-slate-400 mb-1">Fala</div>
+                  <div className="text-2xl font-bold text-purple-400">{(timeSeriesData.reduce((s, d) => s + (d.fala || 0), 0) / (timeSeriesData.length || 1)).toFixed(1)}</div>
                 </div>
-              )
-            }
+                <div className="bg-slate-900/50 rounded-lg p-3 text-center">
+                  <div className="text-xs text-slate-400 mb-1">Comer</div>
+                  <div className="text-2xl font-bold text-red-400">{(timeSeriesData.reduce((s, d) => s + (d.comer || 0), 0) / (timeSeriesData.length || 1)).toFixed(1)}</div>
+                </div>
+                <div className="bg-slate-900/50 rounded-lg p-3 text-center">
+                  <div className="text-xs text-slate-400 mb-1">Limitação</div>
+                  <div className="text-2xl font-bold text-amber-400">{(timeSeriesData.reduce((s, d) => s + (d.limitation || 0), 0) / (timeSeriesData.length || 1)).toFixed(1)}</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {['Fala', 'Comer', 'Limitação'].map((label, idx) => {
+                  const key = ['fala', 'comer', 'limitation'][idx];
+                  const counts = [0, 0, 0, 0, 0];
+                  timeSeriesData.forEach(d => { const v = Math.round(d[key] || 0); if (v >= 0 && v <= 4) counts[v]++; });
+                  const total = timeSeriesData.length || 1;
+                  const colors = ['bg-emerald-500', 'bg-sky-500', 'bg-amber-500', 'bg-orange-500', 'bg-red-500'];
+                  return (
+                    <div key={label}>
+                      <div className="text-xs text-slate-400 mb-1">{label}</div>
+                      <div className="flex h-4 rounded overflow-hidden">
+                        {counts.map((c, i) => <div key={i} className={colors[i]} style={{ width: `${(c / total) * 100}%` }} title={`${i}: ${Math.round((c / total) * 100)}%`} />)}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="flex justify-between text-xs text-slate-500 mt-1">
+                  <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-slate-800 rounded-xl p-5">
               <h3 className="font-semibold text-slate-100 mb-4">Últimos registos ({filteredDates.length} dias)</h3>
               {filteredDates.slice(-7).reverse().map(date => {
@@ -2841,7 +2745,7 @@ const MeigeTracker = () => {
                       <span className="text-sm text-slate-400">Sono: {entry.bedTime || '-'} - {entry.wakeTime || '-'}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div className="text-slate-400">Acordar: <span className="text-slate-200">O:{entry.wakeEyes} M:{entry.wakeFace}</span></div>
+                      <div className="text-slate-400">Acordar: <span className="text-slate-200">O:{entry.wakeEyes} M:{entry.wakeFace} P:{entry.wakeNeck}</span></div>
                       <div className="text-slate-400">Manhã: <span className="text-slate-200">O:{entry.morningEyes} M:{entry.morningFace} P:{entry.morningNeck || 0}</span></div>
                       <div className="text-slate-400">Tarde: <span className="text-slate-200">O:{entry.afternoonEyes} M:{entry.afternoonFace} P:{entry.afternoonNeck || 0}</span></div>
                     </div>
