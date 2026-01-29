@@ -2399,7 +2399,7 @@ const MeigeTracker = () => {
             Object.values(medData).forEach(periodData => {
               if (periodData?.active && periodData?.qty) {
                 totalMedPills += periodData.qty;
-                if (medName.toLowerCase().includes('clonazepam')) {
+                if (medName.toLowerCase().includes('clonazepam') || medName.toLowerCase().includes('rivotril')) {
                   clonazepam += periodData.qty;
                 }
                 if (medName.toLowerCase().includes('trihexifenidil') || medName.toLowerCase().includes('artane')) {
