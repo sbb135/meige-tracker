@@ -2621,14 +2621,15 @@ const MeigeTracker = () => {
                   </div>
                 </div>
                 <div className="bg-slate-900/50 rounded-lg p-3">
-                  <div className="text-xs text-purple-400 font-medium mb-2">Função Bulbar</div>
+                  <div className="text-xs text-purple-400 font-medium mb-2">Fala e Comer</div>
                   <div className="h-28">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={circadianData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
                         <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
-                        <Line type="monotone" dataKey="BFI" stroke="#a855f7" strokeWidth={3} dot={{ r: 3 }} />
+                        <Line type="monotone" dataKey="speech" name="Fala" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} />
+                        <Line type="monotone" dataKey="eating" name="Comer" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
