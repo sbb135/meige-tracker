@@ -664,16 +664,16 @@ const MeigeTracker = () => {
       let bgClass = 'bg-slate-700';
       if (hasEntry) {
         // Calculate daily burden: average severity across all body regions and time periods (0-4 scale)
-        // Each time period: (eyes + face + neck) / 3 = 0-4
-        // Daily burden = average of all periods = 0-4 (matches symptom scale)
-        const wakeAvg = ((hasEntry.wakeEyes || 0) + (hasEntry.wakeFace || 0) + (hasEntry.wakeNeck || 0)) / 3;
-        const morningAvg = ((hasEntry.morningEyes || 0) + (hasEntry.morningFace || 0) + (hasEntry.morningNeck || 0)) / 3;
-        const afternoonAvg = ((hasEntry.afternoonEyes || 0) + (hasEntry.afternoonFace || 0) + (hasEntry.afternoonNeck || 0)) / 3;
-        const eveningAvg = ((hasEntry.eveningEyes || 0) + (hasEntry.eveningFace || 0) + (hasEntry.eveningNeck || 0)) / 3;
+        // Each time period now includes motor (eyes, face, neck) AND functional (speech, eating)
+        const wakeAvg = ((hasEntry.wakeEyes || 0) + (hasEntry.wakeFace || 0) + (hasEntry.wakeNeck || 0) + (hasEntry.wakeSpeech || 0) + (hasEntry.wakeEating || 0)) / 5;
+        const morningAvg = ((hasEntry.morningEyes || 0) + (hasEntry.morningFace || 0) + (hasEntry.morningNeck || 0) + (hasEntry.morningSpeech || 0) + (hasEntry.morningEating || 0)) / 5;
+        const afternoonAvg = ((hasEntry.afternoonEyes || 0) + (hasEntry.afternoonFace || 0) + (hasEntry.afternoonNeck || 0) + (hasEntry.afternoonSpeech || 0) + (hasEntry.afternoonEating || 0)) / 5;
+        const eveningAvg = ((hasEntry.eveningEyes || 0) + (hasEntry.eveningFace || 0) + (hasEntry.eveningNeck || 0) + (hasEntry.eveningSpeech || 0) + (hasEntry.eveningEating || 0)) / 5;
         const dailyBurden = (wakeAvg + morningAvg + afternoonAvg + eveningAvg) / 4; // 0-4 scale
-        if (dailyBurden <= 1) bgClass = 'bg-sky-800';      // Dia bom: 0-1
-        else if (dailyBurden <= 2) bgClass = 'bg-slate-600'; // Dia moderado: 1-2
-        else bgClass = 'bg-slate-500';                       // Dia difícil: 2-4
+        // Stricter thresholds: good <0.5, moderate 0.5-1.5, difficult >1.5
+        if (dailyBurden < 0.5) bgClass = 'bg-sky-800';      // Dia bom: avg < 0.5
+        else if (dailyBurden <= 1.5) bgClass = 'bg-slate-600'; // Dia moderado: 0.5-1.5
+        else bgClass = 'bg-slate-500';                       // Dia difícil: >1.5
       }
 
       days.push(
