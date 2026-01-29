@@ -2642,8 +2642,9 @@ const MeigeTracker = () => {
                         <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
                         <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
                         <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                        <Line type="monotone" dataKey="speech" name="Disartria" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} />
-                        <Line type="monotone" dataKey="eating" name="Disfagia" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                        <Legend wrapperStyle={{ fontSize: '9px' }} />
+                        <Line type="monotone" dataKey="speech" name="Disartria" stroke="#a855f7" strokeWidth={3} dot={{ r: 4, fill: '#a855f7' }} />
+                        <Line type="monotone" dataKey="eating" name="Disfagia" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: '#ef4444' }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
