@@ -151,8 +151,8 @@ const MeigeTracker = () => {
     wakeEyesFreq: null,
     wakeSpeech: null,
     wakeEating: null,
-    emotionalDysregulation: '',
-    wakeStabilizeTime: '',
+    emotionalDysregulation: null,
+    wakeStabilizeTime: null,
     wakeCrying: null,
 
     // Manhã
@@ -219,6 +219,9 @@ const MeigeTracker = () => {
 
     // Botox
     botoxEffect: '',
+
+    // Limitação funcional
+    dailyLimitation: null,
 
     // Notas
     notes: ''
