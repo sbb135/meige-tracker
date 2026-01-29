@@ -2540,6 +2540,9 @@ const MeigeTracker = () => {
       },
     ];
 
+    // Data for Disartria/Disfagia chart - excludes Acordar (no speech/eating at wake)
+    const bulbarCircadianData = circadianData.filter(d => d.epoch !== 'Acordar');
+
     return (
       <div className="max-w-2xl mx-auto">
         <h2 className="text-xl font-semibold text-slate-100 mb-4">Análise Clínica</h2>
@@ -2637,7 +2640,7 @@ const MeigeTracker = () => {
                   <div className="text-xs text-purple-400 font-medium mb-2">Disartria e Disfagia</div>
                   <div className="h-28">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={circadianData}>
+                      <LineChart data={bulbarCircadianData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
                         <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
