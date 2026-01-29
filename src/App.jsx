@@ -2359,6 +2359,7 @@ const MeigeTracker = () => {
 
       // Calculate individual medication amounts
       let clonazepam = 0;
+      let trihexifenidil = 0;
       let valdoxan = 0;
       let totalMedPills = 0;
       if (entry.medicationsTaken) {
@@ -2369,6 +2370,9 @@ const MeigeTracker = () => {
                 totalMedPills += periodData.qty;
                 if (medName.toLowerCase().includes('clonazepam')) {
                   clonazepam += periodData.qty;
+                }
+                if (medName.toLowerCase().includes('trihexifenidil') || medName.toLowerCase().includes('artane')) {
+                  trihexifenidil += periodData.qty;
                 }
                 if (medName.toLowerCase().includes('valdoxan') || medName.toLowerCase().includes('agomelatina')) {
                   valdoxan += periodData.qty;
@@ -2470,6 +2474,7 @@ const MeigeTracker = () => {
         daysSinceBtx,
         totalMedPills,
         clonazepam,
+        trihexifenidil,
         valdoxan,
         sono,
         sleepQuality: entry.sleepQuality,
@@ -2647,11 +2652,11 @@ const MeigeTracker = () => {
                     <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} ticks={[0, 1, 2, 3, 4]} />
                     <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                     <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    <Line type="monotone" dataKey="morningEyes" name="Olhos" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="morningFace" name="Maxilar" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="morningNeck" name="Pescoço" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="morningSpeech" name="Fala" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="morningEating" name="Comer" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="morningEyes" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="morningFace" name="Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="morningNeck" name="Cervical" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="morningSpeech" name="Disartria" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} />
+                    <Line type="monotone" dataKey="morningEating" name="Disfagia" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -2671,7 +2676,7 @@ const MeigeTracker = () => {
                       <YAxis yAxisId="meds" orientation="right" stroke="#10b981" tick={{ fontSize: 11 }} label={{ value: 'Dose (mg)', angle: 90, position: 'insideRight', fill: '#10b981', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend wrapperStyle={{ fontSize: '10px' }} />
-                      <Line yAxisId="symptoms" type="monotone" dataKey="morningFace" name="Maxilar" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="symptoms" type="monotone" dataKey="morningFace" name="Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
                       <Line yAxisId="meds" type="monotone" dataKey="clonazepam" name="Clonazepam" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                       <Line yAxisId="meds" type="monotone" dataKey="trihexifenidil" name="Trihexifenidil" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                     </LineChart>
@@ -2695,51 +2700,17 @@ const MeigeTracker = () => {
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend wrapperStyle={{ fontSize: '10px' }} />
                       <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Horas Sono" stroke="#6366f1" strokeWidth={3} dot={{ r: 2 }} />
-                      <Line yAxisId="symptoms" type="monotone" dataKey="morningFace" name="Maxilar" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="symptoms" type="monotone" dataKey="morningFace" name="Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
             )}
 
-            {/* FIGURE 5: Symptom Distribution */}
-            <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-1">Fig. 5: Distribuição de Gravidade</h3>
-              <p className="text-sm text-slate-400 mb-4">Dias em cada nível (0=Nenhum → 4=Incapacitante)</p>
-              <div className="space-y-3">
-                {[
-                  { label: 'Olhos', key: 'morningEyes' },
-                  { label: 'Maxilar', key: 'morningFace' },
-                  { label: 'Pescoço', key: 'morningNeck' },
-                  { label: 'Fala', key: 'morningSpeech' },
-                  { label: 'Comer', key: 'morningEating' }
-                ].map(({ label, key }) => {
-                  const counts = [0, 0, 0, 0, 0];
-                  timeSeriesData.forEach(d => { const v = Math.round(d[key] || 0); if (v >= 0 && v <= 4) counts[v]++; });
-                  const total = timeSeriesData.length || 1;
-                  const colors = ['bg-emerald-500', 'bg-sky-500', 'bg-amber-500', 'bg-orange-500', 'bg-red-500'];
-                  return (
-                    <div key={label}>
-                      <div className="flex justify-between text-xs text-slate-400 mb-1">
-                        <span>{label}</span>
-                        <span className="text-slate-500">{counts.map((c, i) => c > 0 ? `${i}:${c}d ` : '').join('')}</span>
-                      </div>
-                      <div className="flex h-5 rounded overflow-hidden">
-                        {counts.map((c, i) => <div key={i} className={colors[i]} style={{ width: `${(c / total) * 100}%` }} title={`Nível ${i}: ${c} dias (${Math.round((c / total) * 100)}%)`} />)}
-                      </div>
-                    </div>
-                  );
-                })}
-                <div className="flex justify-between text-xs text-slate-500 mt-2">
-                  <span>0 (Nenhum)</span><span>1</span><span>2</span><span>3</span><span>4 (Incapacitante)</span>
-                </div>
-              </div>
-            </div>
-
-            {/* FIGURE 6: Clonazepam vs Sleep */}
+            {/* FIGURE 5: Clonazepam vs Sleep */}
             {timeSeriesData.some(d => d.clonazepam > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 6: Clonazepam vs Sono</h3>
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 5: Clonazepam vs Sono</h3>
                 <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
@@ -2761,7 +2732,7 @@ const MeigeTracker = () => {
             {/* FIGURE 7: Trihexifenidil vs Sleep */}
             {timeSeriesData.some(d => d.trihexifenidil > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 7: Trihexifenidil vs Sono</h3>
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 6: Trihexifenidil vs Sono</h3>
                 <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
@@ -2783,7 +2754,7 @@ const MeigeTracker = () => {
             {/* FIGURE 8: Valdoxan vs Sleep */}
             {timeSeriesData.some(d => d.valdoxan > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 8: Valdoxan vs Sono</h3>
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 7: Agomelatina (Valdoxan) vs Sono</h3>
                 <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
