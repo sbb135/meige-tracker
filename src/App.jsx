@@ -2757,7 +2757,7 @@ const MeigeTracker = () => {
             {/* FIGURE 5: Clonazepam vs Sleep */}
             {timeSeriesData.some(d => d.clonazepam > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 5: Clonazepam vs Sono</h3>
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 5: Rivotril (Clonazepam) vs Sono</h3>
                 <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
@@ -2779,7 +2779,7 @@ const MeigeTracker = () => {
             {/* FIGURE 7: Trihexifenidil vs Sleep */}
             {timeSeriesData.some(d => d.trihexifenidil > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 6: Trihexifenidil vs Sono</h3>
+                <h3 className="font-semibold text-slate-100 mb-1">Fig. 6: Artane (Trihexifenidil) vs Sono</h3>
                 <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
