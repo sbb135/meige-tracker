@@ -2621,7 +2621,7 @@ const MeigeTracker = () => {
                   </div>
                 </div>
                 <div className="bg-slate-900/50 rounded-lg p-3">
-                  <div className="text-xs text-purple-400 font-medium mb-2">Fala e Comer</div>
+                  <div className="text-xs text-purple-400 font-medium mb-2">Disartria e Disfagia</div>
                   <div className="h-28">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={circadianData}>
