@@ -163,6 +163,7 @@ const MeigeTracker = () => {
     morningSpeech: null,
     morningEating: null,
 
+
     // Tarde
     afternoonEyes: null,
     afternoonFace: null,
@@ -170,6 +171,11 @@ const MeigeTracker = () => {
     afternoonEyesFreq: null,
     afternoonSpeech: null,
     afternoonEating: null,
+
+    // Pós-Sesta (simplified: just jaw and speech + duration)
+    sestaDuration: null,
+    postNapFace: null,
+    postNapSpeech: null,
 
     // Noite
     eveningEyes: null,
@@ -1200,6 +1206,50 @@ const MeigeTracker = () => {
             label="Comer/Mastigar"
             value={dayEntry.afternoonEating}
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonEating: v })}
+            type="function"
+          />
+        </section>
+
+        {/* PÓS-SESTA */}
+        <section className="bg-slate-800 rounded-xl p-5 mb-4">
+          <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
+            Pós-Sesta
+          </h3>
+          <p className="text-xs text-slate-500 mb-4">Sintomas após a sesta (descanso da tarde)</p>
+
+          <div className="mb-4">
+            <label className="block text-sm text-slate-400 mb-2">Duração da sesta</label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: '30', label: '30 min' },
+                { value: '60', label: '1h' },
+                { value: '90', label: '1h30' },
+                { value: '120', label: '2h' },
+                { value: '150', label: '2h+' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setDayEntry({ ...dayEntry, sestaDuration: opt.value })}
+                  className={`px-4 py-2 rounded-lg text-sm ${dayEntry.sestaDuration === opt.value
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                >{opt.label}</button>
+              ))}
+            </div>
+          </div>
+
+          <ClinicalScale
+            label="Mandíbula"
+            value={dayEntry.postNapFace}
+            onChange={(v) => setDayEntry({ ...dayEntry, postNapFace: v })}
+            type="severity"
+          />
+
+          <ClinicalScale
+            label="Fala"
+            value={dayEntry.postNapSpeech}
+            onChange={(v) => setDayEntry({ ...dayEntry, postNapSpeech: v })}
             type="function"
           />
         </section>
