@@ -191,6 +191,7 @@ const MeigeTracker = () => {
       brightLight: false,
       caffeine: false,
       socialSituation: false,
+      badNews: false,
       other: ''
     },
 
@@ -198,7 +199,7 @@ const MeigeTracker = () => {
     sadnessNoReason: false,
     cryingEpisodes: 0,
     irritability: false,
-    anxiety: '',
+    anxietyLevel: null,  // 0-4 scale
 
     // Funcionalidade
     leftHouse: '',
@@ -223,6 +224,13 @@ const MeigeTracker = () => {
     // Limitação funcional
     dailyLimitation: null,
 
+    // Início dos espasmos oromandibulares (minutos e segundos após acordar)
+    spasmOnsetMinutes: null,
+    spasmOnsetSeconds: null,
+
+    // Nível de energia geral do dia (0-4)
+    energyLevel: null,
+
     // Notas
     notes: ''
   });
@@ -246,50 +254,55 @@ const MeigeTracker = () => {
         const { data: entriesData } = await supabase.from('daily_entries').select('*');
         if (entriesData) {
           const entriesObj = {};
+          // Helper to preserve null values from database (avoid defaulting to 0 for unset fields)
+          const preserveNull = (val) => val === null || val === undefined ? null : val;
           entriesData.forEach(e => {
             entriesObj[e.entry_date] = {
               bedTime: e.bed_time,
               wakeTime: e.wake_time,
               sleepQuality: e.sleep_quality,
-              sleepInterruptions: e.sleep_interruptions,
+              sleepInterruptions: preserveNull(e.sleep_interruptions),
               feltRested: e.felt_rested,
-              emotionalDysregulation: e.emotional_dysregulation,
-              wakeCrying: e.wake_crying,
-              wakeStabilizeTime: e.wake_stabilize_time,
-              wakeEyes: e.wake_eyes,
-              wakeFace: e.wake_face,
-              wakeNeck: e.wake_neck,
-              wakeEyesFreq: e.wake_eyes_freq,
-              wakeSpeech: e.wake_speech,
-              wakeEating: e.wake_eating,
-              morningEyes: e.morning_eyes,
-              morningFace: e.morning_face,
-              morningNeck: e.morning_neck,
-              morningEyesFreq: e.morning_eyes_freq,
-              morningSpeech: e.morning_speech,
-              morningEating: e.morning_eating,
-              afternoonEyes: e.afternoon_eyes,
-              afternoonFace: e.afternoon_face,
-              afternoonNeck: e.afternoon_neck,
-              afternoonEyesFreq: e.afternoon_eyes_freq,
-              afternoonSpeech: e.afternoon_speech,
-              afternoonEating: e.afternoon_eating,
-              eveningEyes: e.evening_eyes,
-              eveningFace: e.evening_face,
-              eveningNeck: e.evening_neck,
-              eveningEyesFreq: e.evening_eyes_freq,
-              eveningSpeech: e.evening_speech,
-              eveningEating: e.evening_eating,
+              emotionalDysregulation: preserveNull(e.emotional_dysregulation),
+              wakeCrying: preserveNull(e.wake_crying),
+              wakeStabilizeTime: preserveNull(e.wake_stabilize_time),
+              wakeEyes: preserveNull(e.wake_eyes),
+              wakeFace: preserveNull(e.wake_face),
+              wakeNeck: preserveNull(e.wake_neck),
+              wakeEyesFreq: preserveNull(e.wake_eyes_freq),
+              wakeSpeech: preserveNull(e.wake_speech),
+              wakeEating: preserveNull(e.wake_eating),
+              morningEyes: preserveNull(e.morning_eyes),
+              morningFace: preserveNull(e.morning_face),
+              morningNeck: preserveNull(e.morning_neck),
+              morningEyesFreq: preserveNull(e.morning_eyes_freq),
+              morningSpeech: preserveNull(e.morning_speech),
+              morningEating: preserveNull(e.morning_eating),
+              afternoonEyes: preserveNull(e.afternoon_eyes),
+              afternoonFace: preserveNull(e.afternoon_face),
+              afternoonNeck: preserveNull(e.afternoon_neck),
+              afternoonEyesFreq: preserveNull(e.afternoon_eyes_freq),
+              afternoonSpeech: preserveNull(e.afternoon_speech),
+              afternoonEating: preserveNull(e.afternoon_eating),
+              eveningEyes: preserveNull(e.evening_eyes),
+              eveningFace: preserveNull(e.evening_face),
+              eveningNeck: preserveNull(e.evening_neck),
+              eveningEyesFreq: preserveNull(e.evening_eyes_freq),
+              eveningSpeech: preserveNull(e.evening_speech),
+              eveningEating: preserveNull(e.evening_eating),
               triggers: e.triggers || {},
               sideEffects: e.side_effects || {},
               botoxEffect: e.botox_effect,
-              dailyLimitation: e.daily_limitation,
-              hadGoodPeriod: e.had_good_period,
+              dailyLimitation: preserveNull(e.daily_limitation),
+              spasmOnsetMinutes: preserveNull(e.spasm_onset_minutes),
+              energyLevel: preserveNull(e.energy_level),
+              hadGoodPeriod: preserveNull(e.had_good_period),
               goodPeriodWhen: e.good_period_when,
               goodPeriodDuration: e.good_period_duration,
               normalTasks: e.normal_tasks,
               cryingEpisodes: e.crying_episodes,
               mood: e.mood,
+              anxietyLevel: preserveNull(e.anxiety_level),
               medicationsTaken: e.medications_taken || {},
               medicationNotes: e.medication_notes,
               notes: e.notes
@@ -344,9 +357,11 @@ const MeigeTracker = () => {
   useEffect(() => {
     try {
       if (entries[selectedDate]) {
-        // Load saved entry - ensure medicationsTaken is an object
+        // Load saved entry - merge with defaults to preserve null for unset fields
         const entry = entries[selectedDate];
+        const defaults = getDefaultDayEntry();
         setDayEntry({
+          ...defaults,
           ...entry,
           medicationsTaken: entry.medicationsTaken || {}
         });
@@ -452,12 +467,15 @@ const MeigeTracker = () => {
         side_effects: dayEntry.sideEffects,
         botox_effect: dayEntry.botoxEffect,
         daily_limitation: dayEntry.dailyLimitation,
+        spasm_onset_minutes: dayEntry.spasmOnsetMinutes,
+        energy_level: dayEntry.energyLevel,
         had_good_period: dayEntry.hadGoodPeriod,
         good_period_when: dayEntry.goodPeriodWhen,
         good_period_duration: dayEntry.goodPeriodDuration,
         normal_tasks: dayEntry.normalTasks,
         crying_episodes: dayEntry.cryingEpisodes,
         mood: dayEntry.mood,
+        anxiety_level: dayEntry.anxietyLevel,
         medications_taken: dayEntry.medicationsTaken,
         medication_notes: dayEntry.medicationNotes,
         notes: dayEntry.notes,
@@ -1037,53 +1055,55 @@ const MeigeTracker = () => {
           />
         </section>
 
-        {/* SINTOMAS AO ACORDAR */}
+        {/* INÍCIO DOS ESPASMOS */}
         <section className="bg-slate-800 rounded-xl p-5 mb-4">
           <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
-            Sintomas ao acordar (primeiros 30 min)
+            Início dos espasmos oromandibulares
           </h3>
 
-          <ClinicalScale
-            label="Olhos - Severidade"
-            value={dayEntry.wakeEyes}
-            onChange={(v) => setDayEntry({ ...dayEntry, wakeEyes: v })}
-            type="severity"
-          />
+          {/* Informational note about oromandibular assessment */}
+          <div className="bg-sky-900/30 border border-sky-700/50 rounded-lg p-3 mb-4">
+            <p className="text-sm text-sky-300 flex items-center gap-2">
+              <span className="text-lg">ℹ️</span>
+              <span>A avaliação dos sintomas oromandibulares foi realizada com o dispositivo oral (pastilha) na boca.</span>
+            </p>
+          </div>
 
-          <ClinicalScale
-            label="Olhos - Frequência"
-            value={dayEntry.wakeEyesFreq || 0}
-            onChange={(v) => setDayEntry({ ...dayEntry, wakeEyesFreq: v })}
-            type="frequency"
-          />
-
-          <ClinicalScale
-            label="Mandíbula"
-            value={dayEntry.wakeFace}
-            onChange={(v) => setDayEntry({ ...dayEntry, wakeFace: v })}
-            type="severity"
-          />
-
-          <ClinicalScale
-            label="Pescoço"
-            value={dayEntry.wakeNeck || 0}
-            onChange={(v) => setDayEntry({ ...dayEntry, wakeNeck: v })}
-            type="severity"
-          />
-
-          <ClinicalScale
-            label="Fala"
-            value={dayEntry.wakeSpeech || 0}
-            onChange={(v) => setDayEntry({ ...dayEntry, wakeSpeech: v })}
-            type="function"
-          />
-
-          <ClinicalScale
-            label="Comer/Mastigar"
-            value={dayEntry.wakeEating || 0}
-            onChange={(v) => setDayEntry({ ...dayEntry, wakeEating: v })}
-            type="function"
-          />
+          {/* Time until oromandibular spasms started - free form input */}
+          <div className="mb-4">
+            <label className="block text-sm text-slate-400 mb-2">Tempo até início dos espasmos (após acordar)</label>
+            <div className="flex gap-3 items-center">
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="120"
+                  value={dayEntry.spasmOnsetMinutes ?? ''}
+                  onChange={(e) => setDayEntry({ ...dayEntry, spasmOnsetMinutes: e.target.value === '' ? null : parseInt(e.target.value) })}
+                  className="w-20 p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 focus:ring-2 focus:ring-sky-500 text-center"
+                  placeholder="0"
+                />
+                <span className="text-slate-400">min</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={dayEntry.spasmOnsetSeconds ?? ''}
+                  onChange={(e) => setDayEntry({ ...dayEntry, spasmOnsetSeconds: e.target.value === '' ? null : parseInt(e.target.value) })}
+                  className="w-20 p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100 focus:ring-2 focus:ring-sky-500 text-center"
+                  placeholder="0"
+                />
+                <span className="text-slate-400">seg</span>
+              </div>
+            </div>
+            {(dayEntry.spasmOnsetMinutes !== null || dayEntry.spasmOnsetSeconds !== null) && (
+              <p className="text-xs text-slate-500 mt-2">
+                Registado: {dayEntry.spasmOnsetMinutes || 0} minuto{(dayEntry.spasmOnsetMinutes || 0) !== 1 ? 's' : ''} e {dayEntry.spasmOnsetSeconds || 0} segundo{(dayEntry.spasmOnsetSeconds || 0) !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
         </section>
 
         {/* MANHÃ */}
@@ -1101,7 +1121,7 @@ const MeigeTracker = () => {
 
           <ClinicalScale
             label="Olhos - Frequência"
-            value={dayEntry.morningEyesFreq || 0}
+            value={dayEntry.morningEyesFreq}
             onChange={(v) => setDayEntry({ ...dayEntry, morningEyesFreq: v })}
             type="frequency"
           />
@@ -1150,7 +1170,7 @@ const MeigeTracker = () => {
 
           <ClinicalScale
             label="Olhos - Frequência"
-            value={dayEntry.afternoonEyesFreq || 0}
+            value={dayEntry.afternoonEyesFreq}
             onChange={(v) => setDayEntry({ ...dayEntry, afternoonEyesFreq: v })}
             type="frequency"
           />
@@ -1199,7 +1219,7 @@ const MeigeTracker = () => {
 
           <ClinicalScale
             label="Olhos - Frequência"
-            value={dayEntry.eveningEyesFreq || 0}
+            value={dayEntry.eveningEyesFreq}
             onChange={(v) => setDayEntry({ ...dayEntry, eveningEyesFreq: v })}
             type="frequency"
           />
@@ -1474,9 +1494,35 @@ const MeigeTracker = () => {
         {/* TRIGGERS */}
         <section className="bg-slate-800 rounded-xl p-5 mb-4">
           <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
-            Possíveis triggers
+            Estado emocional e triggers
           </h3>
 
+          {/* Anxiety Level 0-4 */}
+          <div className="mb-4">
+            <label className="block text-sm text-slate-400 mb-2">Nível de ansiedade</label>
+            <div className="flex gap-1">
+              {[
+                { value: 0, label: '0 Nenhuma' },
+                { value: 1, label: '1 Leve' },
+                { value: 2, label: '2 Moderada' },
+                { value: 3, label: '3 Elevada' },
+                { value: 4, label: '4 Severa' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setDayEntry({ ...dayEntry, anxietyLevel: opt.value })}
+                  className={`flex-1 py-2 px-1 rounded text-xs ${dayEntry.anxietyLevel === opt.value
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="block text-sm text-slate-400 mb-2">Possíveis triggers</label>
           <div className="flex flex-wrap gap-2 mb-4">
             {[
               { key: 'stress', label: 'Stress' },
@@ -1484,6 +1530,7 @@ const MeigeTracker = () => {
               { key: 'brightLight', label: 'Luz forte' },
               { key: 'caffeine', label: 'Cafeína' },
               { key: 'socialSituation', label: 'Situação social' },
+              { key: 'badNews', label: 'Discussão/notícia má' },
             ].map(trigger => (
               <button
                 key={trigger.key}
@@ -1514,7 +1561,7 @@ const MeigeTracker = () => {
                 triggers: { ...dayEntry.triggers, other: e.target.value }
               })}
               className="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 text-slate-100"
-              placeholder="Discussão, notícia má, etc."
+              placeholder="Especifique outro trigger..."
             />
           </div>
         </section>
@@ -1545,6 +1592,36 @@ const MeigeTracker = () => {
             />
           </section>
         )}
+        {/* NÍVEL DE ENERGIA */}
+        <section className="bg-slate-800 rounded-xl p-5 mb-4">
+          <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
+            Nível de energia geral
+          </h3>
+          <div className="mb-4">
+            <label className="block text-sm text-slate-400 mb-2">Como se sentiu em termos de energia hoje?</label>
+            <div className="flex gap-1">
+              {[
+                { value: 0, label: 'Muito baixo', color: 'bg-red-600' },
+                { value: 1, label: 'Baixo', color: 'bg-orange-500' },
+                { value: 2, label: 'Normal', color: 'bg-amber-500' },
+                { value: 3, label: 'Bom', color: 'bg-emerald-500' },
+                { value: 4, label: 'Excelente', color: 'bg-sky-600' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setDayEntry({ ...dayEntry, energyLevel: opt.value })}
+                  className={`flex-1 py-2 px-1 rounded text-xs ${dayEntry.energyLevel === opt.value
+                    ? `${opt.color} text-white`
+                    : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* FUNÇÃO DIÁRIA */}
         <section className="bg-slate-800 rounded-xl p-5 mb-4">
           <h3 className="text-lg font-semibold text-slate-100 mb-4 pb-2 border-b border-slate-700">
@@ -1552,7 +1629,7 @@ const MeigeTracker = () => {
           </h3>
           <ClinicalScale
             label="Quanto os sintomas limitaram o seu dia?"
-            value={dayEntry.dailyLimitation || 0}
+            value={dayEntry.dailyLimitation}
             onChange={(v) => setDayEntry({ ...dayEntry, dailyLimitation: v })}
             type="severity"
           />
@@ -2405,21 +2482,28 @@ const MeigeTracker = () => {
       let clonazepam = 0;
       let trihexifenidil = 0;
       let valdoxan = 0;
+      let sertralina = 0;
       let totalMedPills = 0;
       if (entry.medicationsTaken) {
-        Object.entries(entry.medicationsTaken).forEach(([medName, medData]) => {
+        Object.entries(entry.medicationsTaken).forEach(([medId, medData]) => {
+          // Look up medication name from medications array using the ID
+          const medication = medications.find(m => String(m.id) === String(medId));
+          const medName = medication?.name?.toLowerCase() || '';
           if (typeof medData === 'object') {
             Object.values(medData).forEach(periodData => {
               if (periodData?.active && periodData?.qty) {
                 totalMedPills += periodData.qty;
-                if (medName.toLowerCase().includes('clonazepam') || medName.toLowerCase().includes('rivotril')) {
-                  clonazepam += periodData.qty;
+                if (medName.includes('clonazepam') || medName.includes('rivotril')) {
+                  clonazepam += periodData.qty * 0.5; // 0.5mg per pill
                 }
-                if (medName.toLowerCase().includes('trihexifenidil') || medName.toLowerCase().includes('artane')) {
-                  trihexifenidil += periodData.qty;
+                if (medName.includes('trihexifenidil') || medName.includes('artane')) {
+                  trihexifenidil += periodData.qty * 2; // 2mg per pill
                 }
-                if (medName.toLowerCase().includes('valdoxan') || medName.toLowerCase().includes('agomelatina')) {
+                if (medName.includes('valdoxan') || medName.includes('agomelatina')) {
                   valdoxan += periodData.qty;
+                }
+                if (medName.includes('sertralina')) {
+                  sertralina += periodData.qty; // gotas
                 }
               }
             });
@@ -2427,9 +2511,11 @@ const MeigeTracker = () => {
         });
       }
 
-      // Map mood/anxiety values
-      const moodMap = { 'bem': 2, 'normal': 5, 'ansioso': 7, 'muito_ansioso': 9 };
-      const anxiety = moodMap[entry.mood] || 0;
+      // Use new 0-4 anxiety level (fallback to mood mapping for legacy data)
+      const moodMap = { 'bem': 0, 'normal': 1, 'ansioso': 2, 'muito_ansioso': 3 };
+      const anxiety = entry.anxietyLevel !== null && entry.anxietyLevel !== undefined
+        ? entry.anxietyLevel
+        : (moodMap[entry.mood] ?? null);
 
       // Per-epoch symptom data
       const wakeEyes = entry.wakeEyes || 0;
@@ -2486,15 +2572,25 @@ const MeigeTracker = () => {
       return {
         date: `${d}/${m}`,
         fullDate: date,
-        // Raw per-epoch motor symptoms
+        // Raw per-epoch motor symptoms (with || 0 for calculations)
         wakeEyes, wakeFace, wakeNeck,
         morningEyes, morningFace, morningNeck,
         afternoonEyes, afternoonFace, afternoonNeck,
         eveningEyes, eveningFace, eveningNeck,
-        // Raw per-epoch function
+        // Raw per-epoch function (with || 0 for calculations)
         morningSpeech, morningEating,
         afternoonSpeech, afternoonEating,
         eveningSpeech, eveningEating,
+        // Null-preserving fields for heatmap (shows gray for missing data)
+        rawMorningFace: entry.morningFace,
+        rawAfternoonFace: entry.afternoonFace,
+        rawEveningFace: entry.eveningFace,
+        rawMorningSpeech: entry.morningSpeech,
+        rawAfternoonSpeech: entry.afternoonSpeech,
+        rawEveningSpeech: entry.eveningSpeech,
+        rawMorningEating: entry.morningEating,
+        rawAfternoonEating: entry.afternoonEating,
+        rawEveningEating: entry.eveningEating,
         // Legacy aliases
         olhos: morningEyes,
         face: morningFace,
@@ -2521,25 +2617,21 @@ const MeigeTracker = () => {
         clonazepam,
         trihexifenidil,
         valdoxan,
+        sertralina,
+        mandibularAvg: (morningFace + afternoonFace + eveningFace) / 3, // Average mandibular severity (Manhã + Tarde + Noite) / 3
+        motorAvg: (morningEyes + morningFace + morningNeck) / 3, // Average motor severity for active period
         sono,
         sleepQuality: entry.sleepQuality,
         hadGoodPeriod: entry.hadGoodPeriod,
-        goodPeriodWhen: entry.goodPeriodWhen
+        goodPeriodWhen: entry.goodPeriodWhen,
+        spasmOnsetMinutes: entry.spasmOnsetMinutes,
+        energyLevel: entry.energyLevel,
+        anxietyLevel: anxiety
       };
     });
 
     // Prepare circadian data (aggregated by time bin across all days)
     const circadianData = [
-      {
-        epoch: 'Acordar',
-        eyes: timeSeriesData.reduce((s, d) => s + d.wakeEyes, 0) / timeSeriesData.length,
-        jaw: timeSeriesData.reduce((s, d) => s + d.wakeFace, 0) / timeSeriesData.length,
-        neck: timeSeriesData.reduce((s, d) => s + d.wakeNeck, 0) / timeSeriesData.length,
-        speech: 0,
-        eating: 0,
-        MSI: timeSeriesData.reduce((s, d) => s + d.wakeMSI, 0) / timeSeriesData.length,
-        GDB: timeSeriesData.reduce((s, d) => s + d.wakeMSI, 0) / timeSeriesData.length * 0.6, // Approx
-      },
       {
         epoch: 'Manhã',
         eyes: timeSeriesData.reduce((s, d) => s + d.morningEyes, 0) / timeSeriesData.length,
@@ -2575,8 +2667,8 @@ const MeigeTracker = () => {
       },
     ];
 
-    // Data for Disartria/Disfagia chart - excludes Acordar (no speech/eating at wake)
-    const bulbarCircadianData = circadianData.filter(d => d.epoch !== 'Acordar');
+    // Data for Disartria/Disfagia chart (now same as circadianData since Acordar was removed)
+    const bulbarCircadianData = circadianData;
 
     return (
       <div className="max-w-2xl mx-auto">
@@ -2588,7 +2680,7 @@ const MeigeTracker = () => {
             Metodologia e Definições
           </summary>
           <div className="mt-3 text-xs text-slate-400 space-y-2">
-            <div><strong className="text-slate-300">Épocas:</strong> Acordar (30 min), Manhã, Tarde, Noite</div>
+            <div><strong className="text-slate-300">Épocas:</strong> Manhã, Tarde, Noite</div>
             <div><strong className="text-slate-300">Escala (0-4):</strong> 0=Nenhum, 1=Leve, 2=Moderado, 3=Severo, 4=Incapacitante</div>
             <div><strong className="text-slate-300">Motor:</strong> Olhos (Blefarospasmo), Maxilar (Oromandibular), Pescoço (Cervical)</div>
             <div><strong className="text-slate-300">Funcional:</strong> Fala (Disartria), Comer (Disfagia)</div>
@@ -2618,6 +2710,11 @@ const MeigeTracker = () => {
               </button>
             ))}
           </div>
+          {filteredDates.length > 0 && (
+            <p className="text-xs text-slate-500 mt-2">
+              📅 {filteredDates.length} dias: {formatDatePT(filteredDates[0])} até {formatDatePT(filteredDates[filteredDates.length - 1])}
+            </p>
+          )}
         </div>
 
         {filteredDates.length === 0 ? (
@@ -2627,106 +2724,225 @@ const MeigeTracker = () => {
           </div>
         ) : (
           <>
-            {/* FIGURE 1: Perfil Circadiano - Small Multiples */}
+            {/* 1. Carga Sintomática - Manhã */}
             <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-1">Fig. 1: Perfil Circadiano</h3>
-              <p className="text-sm text-slate-400 mb-4">Padrão diurno por região. Identifica picos matinais, fadiga vespertina.</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-900/50 rounded-lg p-3">
-                  <div className="text-xs text-sky-400 font-medium mb-2">Blefarospasmo</div>
-                  <div className="h-28">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={circadianData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
-                        <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
-                        <Line type="monotone" dataKey="eyes" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 3 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <div className="bg-slate-900/50 rounded-lg p-3">
-                  <div className="text-xs text-amber-400 font-medium mb-2">Oromandibular</div>
-                  <div className="h-28">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={circadianData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
-                        <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
-                        <Line type="monotone" dataKey="jaw" stroke="#f59e0b" strokeWidth={3} dot={{ r: 3 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <div className="bg-slate-900/50 rounded-lg p-3">
-                  <div className="text-xs text-emerald-400 font-medium mb-2">Cervical</div>
-                  <div className="h-28">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={circadianData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
-                        <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
-                        <Line type="monotone" dataKey="neck" stroke="#10b981" strokeWidth={3} dot={{ r: 3 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <div className="bg-slate-900/50 rounded-lg p-3">
-                  <div className="text-xs text-purple-400 font-medium mb-2">Disartria e Disfagia</div>
-                  <div className="h-28">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={bulbarCircadianData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="epoch" tick={{ fontSize: 9 }} stroke="#64748b" />
-                        <YAxis domain={[0, 4]} tick={{ fontSize: 9 }} stroke="#64748b" ticks={[0, 2, 4]} />
-                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                        <Legend wrapperStyle={{ fontSize: '9px' }} />
-                        <Line type="monotone" dataKey="speech" name="Disartria" stroke="#a855f7" strokeWidth={3} dot={{ r: 4, fill: '#a855f7' }} />
-                        <Line type="monotone" dataKey="eating" name="Disfagia" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 3" dot={{ r: 3, fill: '#ef4444' }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* FIGURE 2: Daily Trends Over Time */}
-            <div className="bg-slate-800 rounded-xl p-5 mb-4">
-              <h3 className="font-semibold text-slate-100 mb-1">Fig. 2: Tendência ao Longo do Tempo</h3>
-              <p className="text-sm text-slate-400 mb-4">Evolução diária dos sintomas motores e funcionais</p>
+              <h3 className="font-semibold text-slate-100 mb-1">Carga Sintomática - Manhã</h3>
+              <p className="text-sm text-slate-400 mb-4">Severidade total por dia (valores da manhã)</p>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={timeSeriesData}>
+                  <BarChart data={timeSeriesData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                    <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} ticks={[0, 1, 2, 3, 4]} />
+                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                    <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} />
                     <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                     <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    <Line type="monotone" dataKey="morningEyes" name="Blefarospasmo" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="morningFace" name="Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="morningNeck" name="Cervical" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="morningSpeech" name="Disartria" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} />
-                    <Line type="monotone" dataKey="morningEating" name="Disfagia" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} />
-                  </LineChart>
+                    <Bar dataKey="morningEyes" name="Blefarospasmo" stackId="a" fill="#0ea5e9" />
+                    <Bar dataKey="morningFace" name="Oromandibular" stackId="a" fill="#f59e0b" />
+                    <Bar dataKey="morningNeck" name="Cervical" stackId="a" fill="#10b981" />
+                    <Bar dataKey="morningSpeech" name="Disartria" stackId="a" fill="#a855f7" />
+                    <Bar dataKey="morningEating" name="Disfagia" stackId="a" fill="#ef4444" />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* FIGURE 3: Medicação vs Sintomas */}
+            {/* 2. Carga Sintomática - Noite */}
+            <div className="bg-slate-800 rounded-xl p-5 mb-4">
+              <h3 className="font-semibold text-slate-100 mb-1">Carga Sintomática - Noite</h3>
+              <p className="text-sm text-slate-400 mb-4">Severidade total por dia (valores da noite, quando os sintomas são tipicamente piores)</p>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={timeSeriesData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                    <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                    <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                    <Legend wrapperStyle={{ fontSize: '10px' }} />
+                    <Bar dataKey="eveningEyes" name="Blefarospasmo" stackId="a" fill="#0ea5e9" />
+                    <Bar dataKey="eveningFace" name="Oromandibular" stackId="a" fill="#f59e0b" />
+                    <Bar dataKey="eveningNeck" name="Cervical" stackId="a" fill="#10b981" />
+                    <Bar dataKey="eveningSpeech" name="Disartria" stackId="a" fill="#a855f7" />
+                    <Bar dataKey="eveningEating" name="Disfagia" stackId="a" fill="#ef4444" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* 3. Symptom Heatmaps - Oromandibular, Disartria, Disfagia */}
+            <div className="bg-slate-800 rounded-xl p-5 mb-4">
+              <h3 className="font-semibold text-slate-100 mb-1">Oromandibular vs Função - Mapa de Calor</h3>
+              <p className="text-sm text-slate-400 mb-4">Severidade por período do dia (linhas = dias, colunas = períodos)</p>
+
+              {/* Color legend */}
+              <div className="flex items-center gap-2 mb-4 text-xs text-slate-400">
+                <span>Severidade:</span>
+                <div className="flex gap-1">
+                  {[0, 1, 2, 3, 4].map(level => {
+                    const colors = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'];
+                    return (
+                      <div key={level} className="flex items-center gap-1">
+                        <div className="w-4 h-4 rounded" style={{ backgroundColor: colors[level] }}></div>
+                        <span>{level}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Oromandibular Heatmap */}
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <div className="text-sm text-amber-400 font-medium mb-2">Oromandibular</div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-slate-500">
+                          <th className="p-1 text-left">Data</th>
+                          <th className="p-1 text-center">Manhã</th>
+                          <th className="p-1 text-center">Tarde</th>
+                          <th className="p-1 text-center">Noite</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {timeSeriesData.slice(-7).reverse().map((d, i) => {
+                          const colors = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'];
+                          const getColor = (val) => val !== null && val !== undefined ? colors[Math.min(val, 4)] : '#334155';
+                          return (
+                            <tr key={i} className="border-t border-slate-700">
+                              <td className="p-1 text-slate-300">{d.date}</td>
+                              <td className="p-1"><div className="w-6 h-6 rounded mx-auto" style={{ backgroundColor: getColor(d.rawMorningFace) }}></div></td>
+                              <td className="p-1"><div className="w-6 h-6 rounded mx-auto" style={{ backgroundColor: getColor(d.rawAfternoonFace) }}></div></td>
+                              <td className="p-1"><div className="w-6 h-6 rounded mx-auto" style={{ backgroundColor: getColor(d.rawEveningFace) }}></div></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Disartria Heatmap */}
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <div className="text-sm text-purple-400 font-medium mb-2">Disartria (fala)</div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-slate-500">
+                          <th className="p-1 text-left">Data</th>
+                          <th className="p-1 text-center">Manhã</th>
+                          <th className="p-1 text-center">Tarde</th>
+                          <th className="p-1 text-center">Noite</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {timeSeriesData.slice(-7).reverse().map((d, i) => {
+                          const colors = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'];
+                          const getColor = (val) => val !== null && val !== undefined ? colors[Math.min(val, 4)] : '#334155';
+                          return (
+                            <tr key={i} className="border-t border-slate-700">
+                              <td className="p-1 text-slate-300">{d.date}</td>
+                              <td className="p-1"><div className="w-6 h-6 rounded mx-auto" style={{ backgroundColor: getColor(d.rawMorningSpeech) }}></div></td>
+                              <td className="p-1"><div className="w-6 h-6 rounded mx-auto" style={{ backgroundColor: getColor(d.rawAfternoonSpeech) }}></div></td>
+                              <td className="p-1"><div className="w-6 h-6 rounded mx-auto" style={{ backgroundColor: getColor(d.rawEveningSpeech) }}></div></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Disfagia Heatmap */}
+                <div className="bg-slate-900/50 rounded-lg p-3">
+                  <div className="text-sm text-red-400 font-medium mb-2">Disfagia (comer)</div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-slate-500">
+                          <th className="p-1 text-left">Data</th>
+                          <th className="p-1 text-center">Manhã</th>
+                          <th className="p-1 text-center">Tarde</th>
+                          <th className="p-1 text-center">Noite</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {timeSeriesData.slice(-7).reverse().map((d, i) => {
+                          const colors = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'];
+                          const getColor = (val) => val !== null && val !== undefined ? colors[Math.min(val, 4)] : '#334155';
+                          return (
+                            <tr key={i} className="border-t border-slate-700">
+                              <td className="p-1 text-slate-300">{d.date}</td>
+                              <td className="p-1"><div className="w-6 h-6 rounded mx-auto" style={{ backgroundColor: getColor(d.rawMorningEating) }}></div></td>
+                              <td className="p-1"><div className="w-6 h-6 rounded mx-auto" style={{ backgroundColor: getColor(d.rawAfternoonEating) }}></div></td>
+                              <td className="p-1"><div className="w-6 h-6 rounded mx-auto" style={{ backgroundColor: getColor(d.rawEveningEating) }}></div></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Tempo até Início dos Espasmos */}
+            {timeSeriesData.some(d => d.spasmOnsetMinutes !== null && d.spasmOnsetMinutes !== undefined) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-1">Tempo até Início dos Espasmos Oromandibulares</h3>
+                <p className="text-sm text-slate-400 mb-4">Minutos após acordar até início dos espasmos</p>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={timeSeriesData.filter(d => d.spasmOnsetMinutes !== null)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                      <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'Minutos', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 10 }} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Bar dataKey="spasmOnsetMinutes" name="Minutos" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* 5. Nível de Energia Geral */}
+            {timeSeriesData.some(d => d.energyLevel !== null && d.energyLevel !== undefined) && (
+              <div className="bg-slate-800 rounded-xl p-5 mb-4">
+                <h3 className="font-semibold text-slate-100 mb-1">Nível de Energia Geral</h3>
+                <p className="text-sm text-slate-400 mb-4">Evolução da energia ao longo do tempo (0=Muito baixo, 4=Excelente)</p>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={timeSeriesData.filter(d => d.energyLevel !== null)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                      <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} ticks={[0, 1, 2, 3, 4]} />
+                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
+                      <Bar dataKey="energyLevel" name="Nível de Energia">
+                        {timeSeriesData.filter(d => d.energyLevel !== null).map((entry, index) => {
+                          const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#0ea5e9'];
+                          return <Cell key={`cell-${index}`} fill={colors[entry.energyLevel] || '#64748b'} />;
+                        })}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* 6. Medicação Meige vs Oromandibular */}
             {timeSeriesData.some(d => d.clonazepam > 0 || d.trihexifenidil > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 3: Medicação vs Sintomas</h3>
-                <p className="text-sm text-slate-400 mb-4">Comparação de doses com gravidade dos sintomas</p>
+                <h3 className="font-semibold text-slate-100 mb-1">Medicação Meige vs Oromandibular</h3>
+                <p className="text-sm text-slate-400 mb-4">Clonazepam e Trihexifenidil vs média diária mandibular (Manhã+Tarde+Noite÷3)</p>
                 <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={timeSeriesData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="symptoms" domain={[0, 4]} stroke="#f59e0b" tick={{ fontSize: 11 }} label={{ value: 'Sintomas', angle: -90, position: 'insideLeft', fill: '#f59e0b', fontSize: 10 }} />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="symptoms" domain={[0, 4]} stroke="#f59e0b" tick={{ fontSize: 11 }} label={{ value: 'Mandibular', angle: -90, position: 'insideLeft', fill: '#f59e0b', fontSize: 10 }} />
                       <YAxis yAxisId="meds" orientation="right" stroke="#10b981" tick={{ fontSize: 11 }} label={{ value: 'Dose (mg)', angle: 90, position: 'insideRight', fill: '#10b981', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend wrapperStyle={{ fontSize: '10px' }} />
-                      <Line yAxisId="symptoms" type="monotone" dataKey="morningFace" name="Oromandibular" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="symptoms" type="monotone" dataKey="mandibularAvg" name="Oromandibular (média)" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
                       <Line yAxisId="meds" type="monotone" dataKey="clonazepam" name="Clonazepam" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                       <Line yAxisId="meds" type="monotone" dataKey="trihexifenidil" name="Trihexifenidil" stroke="#3b82f6" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                     </LineChart>
@@ -2735,16 +2951,16 @@ const MeigeTracker = () => {
               </div>
             )}
 
-            {/* FIGURE 4: Sleep vs Symptoms */}
+            {/* 7. Sono vs Oromandibular */}
             {timeSeriesData.some(d => d.sono !== null && d.sono > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 4: Sono vs Sintomas</h3>
-                <p className="text-sm text-slate-400 mb-4">Horas de sono comparadas com gravidade dos sintomas</p>
+                <h3 className="font-semibold text-slate-100 mb-1">Sono vs Oromandibular</h3>
+                <p className="text-sm text-slate-400 mb-4">Horas de sono comparadas com gravidade oromandibular</p>
                 <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={timeSeriesData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
                       <YAxis yAxisId="sleep" domain={[4, 10]} stroke="#6366f1" tick={{ fontSize: 11 }} label={{ value: 'Sono (h)', angle: -90, position: 'insideLeft', fill: '#6366f1', fontSize: 10 }} />
                       <YAxis yAxisId="symptoms" orientation="right" domain={[0, 4]} stroke="#f59e0b" tick={{ fontSize: 11 }} label={{ value: 'Sintomas', angle: 90, position: 'insideRight', fill: '#f59e0b', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
@@ -2757,71 +2973,52 @@ const MeigeTracker = () => {
               </div>
             )}
 
-            {/* FIGURE 5: Clonazepam vs Sleep */}
-            {timeSeriesData.some(d => d.clonazepam > 0) && (
+            {/* 8a. Sertralina vs Ansiedade */}
+            {timeSeriesData.some(d => d.sertralina > 0) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 5: Rivotril (Clonazepam) vs Sono</h3>
-                <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
+                <h3 className="font-semibold text-slate-100 mb-1">Sertralina vs Ansiedade</h3>
+                <p className="text-sm text-slate-400 mb-4">Dose diária (gotas) comparada com níveis de ansiedade (0-4)</p>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={timeSeriesData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="dose" stroke="#10b981" tick={{ fontSize: 11 }} label={{ value: 'Dose (mg)', angle: -90, position: 'insideLeft', fill: '#10b981', fontSize: 10 }} />
-                      <YAxis yAxisId="sleep" orientation="right" domain={[4, 10]} stroke="#6366f1" tick={{ fontSize: 11 }} label={{ value: 'Sono (h)', angle: 90, position: 'insideRight', fill: '#6366f1', fontSize: 10 }} />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                      <YAxis yAxisId="dose" stroke="#22c55e" tick={{ fontSize: 11 }} label={{ value: 'Gotas', angle: -90, position: 'insideLeft', fill: '#22c55e', fontSize: 10 }} />
+                      <YAxis yAxisId="anxiety" orientation="right" domain={[0, 4]} stroke="#a855f7" tick={{ fontSize: 11 }} ticks={[0, 1, 2, 3, 4]} label={{ value: 'Ansiedade', angle: 90, position: 'insideRight', fill: '#a855f7', fontSize: 10 }} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
                       <Legend wrapperStyle={{ fontSize: '10px' }} />
-                      <Line yAxisId="dose" type="monotone" dataKey="clonazepam" name="Clonazepam (mg)" stroke="#10b981" strokeWidth={2} dot={{ r: 2 }} />
-                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Sono (h)" stroke="#6366f1" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 2 }} />
+                      <Line yAxisId="dose" type="monotone" dataKey="sertralina" name="Sertralina (gotas)" stroke="#22c55e" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line yAxisId="anxiety" type="monotone" dataKey="anxietyLevel" name="Ansiedade (0-4)" stroke="#a855f7" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 2 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
             )}
 
-            {/* FIGURE 7: Trihexifenidil vs Sleep */}
-            {timeSeriesData.some(d => d.trihexifenidil > 0) && (
+            {/* 8b. Standalone Anxiety Chart (if no Sertralina data) */}
+            {!timeSeriesData.some(d => d.sertralina > 0) && timeSeriesData.some(d => d.anxietyLevel !== null && d.anxietyLevel !== undefined) && (
               <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 6: Artane (Trihexifenidil) vs Sono</h3>
-                <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
+                <h3 className="font-semibold text-slate-100 mb-1">Nível de Ansiedade</h3>
+                <p className="text-sm text-slate-400 mb-4">Evolução da ansiedade ao longo do tempo (0=Nenhuma, 4=Severa)</p>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeSeriesData}>
+                    <BarChart data={timeSeriesData.filter(d => d.anxietyLevel !== null)}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="dose" stroke="#3b82f6" tick={{ fontSize: 11 }} label={{ value: 'Dose (mg)', angle: -90, position: 'insideLeft', fill: '#3b82f6', fontSize: 10 }} />
-                      <YAxis yAxisId="sleep" orientation="right" domain={[4, 10]} stroke="#6366f1" tick={{ fontSize: 11 }} label={{ value: 'Sono (h)', angle: 90, position: 'insideRight', fill: '#6366f1', fontSize: 10 }} />
+                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
+                      <YAxis domain={[0, 4]} stroke="#94a3b8" tick={{ fontSize: 11 }} ticks={[0, 1, 2, 3, 4]} />
                       <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                      <Legend wrapperStyle={{ fontSize: '10px' }} />
-                      <Line yAxisId="dose" type="monotone" dataKey="trihexifenidil" name="Trihexifenidil (mg)" stroke="#3b82f6" strokeWidth={2} dot={{ r: 2 }} />
-                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Sono (h)" stroke="#6366f1" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 2 }} />
-                    </LineChart>
+                      <Bar dataKey="anxietyLevel" name="Ansiedade">
+                        {timeSeriesData.filter(d => d.anxietyLevel !== null).map((entry, index) => {
+                          const colors = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'];
+                          return <Cell key={`cell-${index}`} fill={colors[entry.anxietyLevel] || '#64748b'} />;
+                        })}
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
             )}
 
-            {/* FIGURE 8: Valdoxan vs Sleep */}
-            {timeSeriesData.some(d => d.valdoxan > 0) && (
-              <div className="bg-slate-800 rounded-xl p-5 mb-4">
-                <h3 className="font-semibold text-slate-100 mb-1">Fig. 7: Agomelatina (Valdoxan) vs Sono</h3>
-                <p className="text-sm text-slate-400 mb-4">Dose diária comparada com horas de sono</p>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={timeSeriesData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                      <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
-                      <YAxis yAxisId="dose" stroke="#ec4899" tick={{ fontSize: 11 }} label={{ value: 'Dose (mg)', angle: -90, position: 'insideLeft', fill: '#ec4899', fontSize: 10 }} />
-                      <YAxis yAxisId="sleep" orientation="right" domain={[4, 10]} stroke="#6366f1" tick={{ fontSize: 11 }} label={{ value: 'Sono (h)', angle: 90, position: 'insideRight', fill: '#6366f1', fontSize: 10 }} />
-                      <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }} />
-                      <Legend wrapperStyle={{ fontSize: '10px' }} />
-                      <Line yAxisId="dose" type="monotone" dataKey="valdoxan" name="Valdoxan (mg)" stroke="#ec4899" strokeWidth={2} dot={{ r: 2 }} />
-                      <Line yAxisId="sleep" type="monotone" dataKey="sono" name="Sono (h)" stroke="#6366f1" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 2 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
             <div className="bg-slate-800 rounded-xl p-5">
               <h3 className="font-semibold text-slate-100 mb-4">Últimos registos ({filteredDates.length} dias)</h3>
               {filteredDates.slice(-7).reverse().map(date => {
@@ -2833,9 +3030,9 @@ const MeigeTracker = () => {
                       <span className="text-sm text-slate-400">Sono: {entry.bedTime || '-'} - {entry.wakeTime || '-'}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div className="text-slate-400">Acordar: <span className="text-slate-200">O:{entry.wakeEyes} M:{entry.wakeFace} P:{entry.wakeNeck}</span></div>
                       <div className="text-slate-400">Manhã: <span className="text-slate-200">O:{entry.morningEyes} M:{entry.morningFace} P:{entry.morningNeck || 0}</span></div>
                       <div className="text-slate-400">Tarde: <span className="text-slate-200">O:{entry.afternoonEyes} M:{entry.afternoonFace} P:{entry.afternoonNeck || 0}</span></div>
+                      <div className="text-slate-400">Noite: <span className="text-slate-200">O:{entry.eveningEyes} M:{entry.eveningFace} P:{entry.eveningNeck || 0}</span></div>
                     </div>
                     {entry.notes && <p className="mt-2 text-sm text-slate-500 italic">"{entry.notes}"</p>}
                   </div>

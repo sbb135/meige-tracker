@@ -3,61 +3,108 @@
 -- Run this in Supabase SQL Editor
 -- =====================================================
 
--- 1. Daily Symptom Entries Table
-create table if not exists daily_entries (
-  id bigint primary key generated always as identity,
-  entry_date date not null unique,
+-- DROP existing table and recreate with all fields
+DROP TABLE IF EXISTS daily_entries;
+
+CREATE TABLE daily_entries (
+  id SERIAL PRIMARY KEY,
+  entry_date DATE UNIQUE NOT NULL,
   
-  -- Sono (Sleep)
-  bed_time text,
-  wake_time text,
-  sleep_quality text,
+  -- Sleep
+  bed_time TEXT,
+  wake_time TEXT,
+  sleep_quality TEXT,
+  sleep_interruptions TEXT,
+  felt_rested TEXT,
   
-  -- Sintomas ao acordar
-  wake_eyes integer default 0,
-  wake_face integer default 0,
+  -- Emotional state at wake
+  emotional_dysregulation TEXT,
+  wake_crying BOOLEAN DEFAULT FALSE,
+  wake_stabilize_time INTEGER DEFAULT 0,
   
-  -- Sintomas manhã
-  morning_eyes integer default 0,
-  morning_face integer default 0,
-  morning_speech integer default 0,
-  morning_eating integer default 0,
+  -- Wake symptoms (first 30 min)
+  wake_eyes INTEGER DEFAULT 0,
+  wake_face INTEGER DEFAULT 0,
+  wake_neck INTEGER DEFAULT 0,
+  wake_eyes_freq INTEGER DEFAULT 0,
+  wake_speech INTEGER DEFAULT 0,
+  wake_eating INTEGER DEFAULT 0,
   
-  -- Sintomas tarde
-  afternoon_eyes integer default 0,
-  afternoon_face integer default 0,
-  afternoon_speech integer default 0,
-  afternoon_eating integer default 0,
+  -- Morning symptoms
+  morning_eyes INTEGER DEFAULT 0,
+  morning_face INTEGER DEFAULT 0,
+  morning_neck INTEGER DEFAULT 0,
+  morning_eyes_freq INTEGER DEFAULT 0,
+  morning_speech INTEGER DEFAULT 0,
+  morning_eating INTEGER DEFAULT 0,
   
-  -- Sintomas noite
-  evening_eyes integer default 0,
-  evening_face integer default 0,
-  evening_speech integer default 0,
-  evening_eating integer default 0,
+  -- Afternoon symptoms
+  afternoon_eyes INTEGER DEFAULT 0,
+  afternoon_face INTEGER DEFAULT 0,
+  afternoon_neck INTEGER DEFAULT 0,
+  afternoon_eyes_freq INTEGER DEFAULT 0,
+  afternoon_speech INTEGER DEFAULT 0,
+  afternoon_eating INTEGER DEFAULT 0,
   
-  -- Triggers
-  triggers jsonb default '{}',
+  -- Evening symptoms
+  evening_eyes INTEGER DEFAULT 0,
+  evening_face INTEGER DEFAULT 0,
+  evening_neck INTEGER DEFAULT 0,
+  evening_eyes_freq INTEGER DEFAULT 0,
+  evening_speech INTEGER DEFAULT 0,
+  evening_eating INTEGER DEFAULT 0,
   
-  -- Funcionalidade
-  normal_tasks text,
-  crying_episodes integer default 0,
+  -- Good period
+  had_good_period BOOLEAN DEFAULT FALSE,
+  good_period_when TEXT,
+  good_period_duration TEXT,
   
-  -- Medicação tomada
-  medications_taken jsonb default '{}',
+  -- Medications
+  medications_taken JSONB DEFAULT '{}',
+  medication_notes TEXT,
   
-  -- Notas
-  notes text,
+  -- Triggers and side effects
+  triggers JSONB DEFAULT '{}',
+  side_effects JSONB DEFAULT '{}',
   
-  created_at timestamp with time zone default now(),
-  updated_at timestamp with time zone default now()
+  -- Botox effect
+  botox_effect TEXT,
+  
+  -- Daily assessment
+  daily_limitation INTEGER DEFAULT 0,
+  normal_tasks TEXT,
+  crying_episodes INTEGER DEFAULT 0,
+  mood TEXT,
+  notes TEXT,
+  
+  -- NEW: Spasm onset timing and energy tracking
+  spasm_onset_minutes INTEGER,
+  energy_level INTEGER,
+  
+  -- Metadata
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Create index for faster date lookups
+CREATE INDEX idx_daily_entries_date ON daily_entries(entry_date);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE daily_entries ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for public access (anon role)
+CREATE POLICY "Public access" ON daily_entries FOR ALL TO anon USING (true) WITH CHECK (true);
+
+-- =====================================================
+-- OTHER TABLES (if not already created)
+-- =====================================================
+
 -- 2. Botox Injection Records Table
-create table if not exists botox_injections (
+CREATE TABLE IF NOT EXISTS botox_injections (
   id bigint primary key generated always as identity,
   injection_date date not null,
   total_dose text,
-  sites jsonb default '{}',  -- { "masseter_esq": 10, "masseter_dir": 10, ... }
+  sites jsonb default '{}',
   doctor text,
   clinic text,
   notes text,
@@ -65,18 +112,14 @@ create table if not exists botox_injections (
 );
 
 -- 3. Medication Configuration Table
-create table if not exists medications (
+CREATE TABLE IF NOT EXISTS medications (
   id bigint primary key generated always as identity,
-  name text not null,
-  dose_per_pill text,
-  times_per_day jsonb default '[]',  -- ["08:00", "14:00", "20:00"]
-  notes text,
-  active boolean default true,
+  data jsonb default '[]',
   created_at timestamp with time zone default now()
 );
 
 -- 4. Medical Appointments Table
-create table if not exists appointments (
+CREATE TABLE IF NOT EXISTS appointments (
   id bigint primary key generated always as identity,
   appointment_date date not null,
   appointment_time text,
@@ -88,34 +131,35 @@ create table if not exists appointments (
   created_at timestamp with time zone default now()
 );
 
--- Enable Row Level Security (RLS)
-alter table daily_entries enable row level security;
-alter table botox_injections enable row level security;
-alter table medications enable row level security;
-alter table appointments enable row level security;
+-- 5. Doctors Table
+CREATE TABLE IF NOT EXISTS doctors (
+  id bigint primary key generated always as identity,
+  data jsonb default '[]',
+  created_at timestamp with time zone default now()
+);
 
--- Create policies for public read/write access (for now - no auth)
-create policy "Public can read daily_entries" on daily_entries for select to anon using (true);
-create policy "Public can insert daily_entries" on daily_entries for insert to anon with check (true);
-create policy "Public can update daily_entries" on daily_entries for update to anon using (true);
-create policy "Public can delete daily_entries" on daily_entries for delete to anon using (true);
+-- Enable RLS for other tables
+ALTER TABLE botox_injections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE medications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE doctors ENABLE ROW LEVEL SECURITY;
 
-create policy "Public can read botox_injections" on botox_injections for select to anon using (true);
-create policy "Public can insert botox_injections" on botox_injections for insert to anon with check (true);
-create policy "Public can update botox_injections" on botox_injections for update to anon using (true);
-create policy "Public can delete botox_injections" on botox_injections for delete to anon using (true);
+-- Create policies for other tables (if not exist)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'botox_injections' AND policyname = 'Public access') THEN
+    CREATE POLICY "Public access" ON botox_injections FOR ALL TO anon USING (true) WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'medications' AND policyname = 'Public access') THEN
+    CREATE POLICY "Public access" ON medications FOR ALL TO anon USING (true) WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'appointments' AND policyname = 'Public access') THEN
+    CREATE POLICY "Public access" ON appointments FOR ALL TO anon USING (true) WITH CHECK (true);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'doctors' AND policyname = 'Public access') THEN
+    CREATE POLICY "Public access" ON doctors FOR ALL TO anon USING (true) WITH CHECK (true);
+  END IF;
+END $$;
 
-create policy "Public can read medications" on medications for select to anon using (true);
-create policy "Public can insert medications" on medications for insert to anon with check (true);
-create policy "Public can update medications" on medications for update to anon using (true);
-create policy "Public can delete medications" on medications for delete to anon using (true);
-
-create policy "Public can read appointments" on appointments for select to anon using (true);
-create policy "Public can insert appointments" on appointments for insert to anon with check (true);
-create policy "Public can update appointments" on appointments for update to anon using (true);
-create policy "Public can delete appointments" on appointments for delete to anon using (true);
-
--- Create indexes for better performance
-create index if not exists idx_daily_entries_date on daily_entries(entry_date);
-create index if not exists idx_botox_injections_date on botox_injections(injection_date);
-create index if not exists idx_appointments_date on appointments(appointment_date);
+-- Create indexes for other tables
+CREATE INDEX IF NOT EXISTS idx_botox_injections_date ON botox_injections(injection_date);
+CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(appointment_date);
